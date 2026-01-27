@@ -6,11 +6,16 @@
   padding: 4px 12px;
   border-radius: 16px;
   background-color: #e0e0e0;
+  box-sizing: border-box;
+  font-size: 14px;
+  overflow: hidden;
+}
+
+.chip__text {
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  box-sizing: border-box;
-  font-size: 14px;
 }
 
 .demo-btn {

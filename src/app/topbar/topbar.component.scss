@@ -27,6 +27,8 @@
     align-items: center;
     gap: 8px;
     min-width: 0;
+    overflow: hidden;
+    flex: 0 0 auto;
   }
 
   &__back-button {
@@ -60,15 +62,14 @@
     font-size: 20px;
     font-weight: 500;
     white-space: nowrap;
-    min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    flex: 0 0 auto;
   }
 
   &__left-content {
     display: flex;
     align-items: center;
     min-width: 0;
+    flex: 1 1 auto;
 
     // Allow projected "chip" to shrink and ellipsize inside the left area.
     :where(.chip) {
@@ -104,8 +105,9 @@
 
   &.topbar--center-wrapped {
     grid-template-areas:
-      'left . right'
-      'center center center';
+      'left right'
+      'center center';
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   }
 
   &.topbar--center-wrapped &__center-section {

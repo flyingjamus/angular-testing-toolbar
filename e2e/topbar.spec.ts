@@ -103,6 +103,34 @@ test.describe('Topbar Layout - Real Measurements', () => {
         );
       }
     });
+
+    test('title should not visually overlap chip', async ({ page }) => {
+      const viewportWidths = [600, 400, 320];
+
+      for (const width of viewportWidths) {
+        await page.setViewportSize({ width, height: 800 });
+        await page.waitForTimeout(100);
+
+        const overlapCheck = await page.evaluate(() => {
+          const title = document.querySelector<HTMLElement>('.topbar__title');
+          const chip = document.querySelector<HTMLElement>('.chip');
+          if (!title || !chip) return { ok: true };
+
+          const a = title.getBoundingClientRect();
+          const b = chip.getBoundingClientRect();
+
+          const left = Math.max(a.left, b.left);
+          const top = Math.max(a.top, b.top);
+          const right = Math.min(a.right, b.right);
+          const bottom = Math.min(a.bottom, b.bottom);
+
+          const hasIntersection = right > left && bottom > top;
+          return { ok: !hasIntersection, hasIntersection };
+        });
+
+        expect(overlapCheck.ok, `width=${width} ${JSON.stringify(overlapCheck)}`).toBe(true);
+      }
+    });
   });
 
   test.describe('Center Section Wrapping', () => {
@@ -201,6 +229,28 @@ test.describe('Topbar Layout - Real Measurements', () => {
       const yDifference = Math.abs(leftBox.y - rightBox.y);
       expect(yDifference).toBeLessThan(Math.max(leftBox.height, rightBox.height));
     });
+
+    test('chip should stay on first row when center wraps', async ({ page }) => {
+      await page.setViewportSize({ width: 400, height: 800 });
+      await page.waitForTimeout(100);
+
+      const topbar = page.locator('.topbar');
+      const isWrapped = await topbar.evaluate((el) =>
+        el.classList.contains('topbar--center-wrapped')
+      );
+      expect(isWrapped).toBe(true);
+
+      const titleBox = await getBoundingBox(page, '.topbar__title');
+      const chipBox = await getBoundingBox(page, '.chip');
+      const centerBox = await getBoundingBox(page, '.topbar__center-section');
+
+      // Chip should be on the same row as the title (left area), not below it.
+      const chipTitleYDiff = Math.abs(chipBox.y - titleBox.y);
+      expect(chipTitleYDiff).toBeLessThan(Math.max(chipBox.height, titleBox.height));
+
+      // Center section should be on a lower row than the chip/title row.
+      expect(centerBox.y).toBeGreaterThan(chipBox.y);
+    });
   });
 
   test.describe('Center Section Centering', () => {
@@ -265,10 +315,10 @@ test.describe('Topbar Layout - Real Measurements', () => {
       await page.setViewportSize({ width: 1200, height: 800 });
       await page.waitForTimeout(100);
 
-      const chip = page.locator('.chip');
+      const chipText = page.locator('.chip__text');
 
       // Check that ellipsis styles are applied
-      const styles = await chip.evaluate((el) => {
+      const styles = await chipText.evaluate((el) => {
         const computed = window.getComputedStyle(el);
         return {
           textOverflow: computed.textOverflow,
@@ -288,36 +338,73 @@ test.describe('Topbar Layout - Real Measurements', () => {
       await page.setViewportSize({ width: 1200, height: 800 });
       await page.waitForTimeout(100);
 
-      const chip = page.locator('.chip');
-      const chipBox = await chip.boundingBox();
-      const scrollWidth = await chip.evaluate((el) => el.scrollWidth);
+      const chipText = page.locator('.chip__text');
+      const chipTextBox = await chipText.boundingBox();
+      const scrollWidth = await chipText.evaluate((el) => el.scrollWidth);
 
       // If content is truncated, scrollWidth should be greater than visible width
-      if (chipBox && scrollWidth > chipBox.width) {
+      if (chipTextBox && scrollWidth > chipTextBox.width) {
         // Text is truncated - this is expected for long text
+        const chipBox = await getBoundingBox(page, '.chip');
         expect(chipBox.width).toBeLessThanOrEqual(280);
       }
+    });
+
+    test('chip should ellipsize long text (scrollWidth > clientWidth)', async ({ page }) => {
+      await page.setViewportSize({ width: 1200, height: 800 });
+      await page.waitForTimeout(100);
+
+      const chipText = page.locator('.chip__text');
+      const metrics = await chipText.evaluate((el) => {
+        const style = window.getComputedStyle(el);
+        return {
+          scrollWidth: el.scrollWidth,
+          clientWidth: el.clientWidth,
+          textOverflow: style.textOverflow,
+          overflow: style.overflow,
+          whiteSpace: style.whiteSpace,
+        };
+      });
+
+      expect(metrics.textOverflow).toBe('ellipsis');
+      expect(metrics.overflow).toBe('hidden');
+      expect(metrics.whiteSpace).toBe('nowrap');
+      expect(metrics.scrollWidth).toBeGreaterThan(metrics.clientWidth);
+    });
+
+    test('chip min width should be visually respected (not clipped) at 592px', async ({
+      page,
+    }) => {
+      await page.setViewportSize({ width: 592, height: 800 });
+      await page.waitForTimeout(150);
+
+      const leftBox = await getBoundingBox(page, '.topbar__left-section');
+      const chipBox = await getBoundingBox(page, '.chip');
+
+      // If the left section is narrower than the chip, the chip will be clipped
+      // (sliced) by the left-section overflow.
+      expect(leftBox.width).toBeGreaterThanOrEqual(chipBox.width - 0.5);
+
+      // Also ensure the chip is geometrically contained inside the left section.
+      expect(chipBox.x).toBeGreaterThanOrEqual(leftBox.x - 0.5);
+      expect(chipBox.x + chipBox.width).toBeLessThanOrEqual(leftBox.x + leftBox.width + 0.5);
     });
   });
 
   test.describe('Title Truncation', () => {
-    test('title should have text-overflow: ellipsis style', async ({ page }) => {
+    test('title should not be truncated at wide viewport', async ({ page }) => {
       await page.setViewportSize({ width: 1200, height: 800 });
       await page.waitForTimeout(100);
 
       const title = page.locator('.topbar__title');
-      const styles = await title.evaluate((el) => {
-        const computed = window.getComputedStyle(el);
-        return {
-          textOverflow: computed.textOverflow,
-          overflow: computed.overflow,
-          whiteSpace: computed.whiteSpace,
-        };
-      });
+      const titleBox = await title.boundingBox();
+      const titleScrollWidth = await title.evaluate((el) => el.scrollWidth);
 
-      expect(styles.textOverflow).toBe('ellipsis');
-      expect(styles.overflow).toBe('hidden');
-      expect(styles.whiteSpace).toBe('nowrap');
+      expect(titleBox).toBeTruthy();
+      if (titleBox) {
+        // If not truncated, intrinsic width fits within the rendered box.
+        expect(titleScrollWidth).toBeLessThanOrEqual(titleBox.width + 1);
+      }
     });
   });
 

@@ -226,7 +226,7 @@ describe('TopbarComponent without projected content', () => {
       <app-topbar>
         <ng-template topbarLeftContent>
           <span class="chip" [attr.data-testid]="'chip'">
-            {{ chipText }}
+            <span class="chip__text">{{ chipText }}</span>
           </span>
         </ng-template>
       </app-topbar>
@@ -242,9 +242,14 @@ describe('TopbarComponent without projected content', () => {
       border-radius: 16px;
       background-color: #e0e0e0;
       overflow: hidden;
+      box-sizing: border-box;
+    }
+
+    .chip__text {
+      min-width: 0;
+      overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
-      box-sizing: border-box;
     }
   `]
 })
@@ -265,7 +270,7 @@ class ChipTestHostComponent {
     <div class="test-container" [style.width.px]="containerWidth">
       <app-topbar>
         <ng-template topbarLeftContent>
-          <span class="chip">{{ chipText }}</span>
+          <span class="chip"><span class="chip__text">{{ chipText }}</span></span>
         </ng-template>
         <ng-template topbarCenterContent>
           <span class="center-content">Center</span>
@@ -331,8 +336,16 @@ describe('TopbarComponent with chip in left content', () => {
     return fixture.debugElement.query(By.css('.chip')).nativeElement;
   }
 
+  function getChipTextElement(): HTMLElement {
+    return fixture.debugElement.query(By.css('.chip__text')).nativeElement;
+  }
+
   function getChipComputedStyle(): CSSStyleDeclaration {
     return getComputedStyle(getChipElement());
+  }
+
+  function getChipTextComputedStyle(): CSSStyleDeclaration {
+    return getComputedStyle(getChipTextElement());
   }
 
   describe('chip dimension constraints', () => {
@@ -365,28 +378,29 @@ describe('TopbarComponent with chip in left content', () => {
     it('should show full text when it fits within max-width', () => {
       createFixture({ chipText: 'Short text' });
 
-      const chip = getChipElement();
+      const chipText = getChipTextElement();
 
-      expect(chip.textContent?.trim()).toBe('Short text');
+      expect(chipText.textContent?.trim()).toBe('Short text');
     });
 
     it('should truncate text with ellipsis when exceeding max-width', () => {
       createFixture({ chipText: 'This is a very long text that should definitely be truncated with ellipsis because it exceeds max-width' });
 
       const chip = getChipElement();
+      const textStyle = getChipTextComputedStyle();
       const style = getChipComputedStyle();
 
       // Verify truncation styles are applied
-      expect(style.textOverflow).toBe('ellipsis');
-      expect(style.overflow).toBe('hidden');
-      expect(style.whiteSpace).toBe('nowrap');
+      expect(textStyle.textOverflow).toBe('ellipsis');
+      expect(textStyle.overflow).toBe('hidden');
+      expect(textStyle.whiteSpace).toBe('nowrap');
       expect(style.maxWidth).toBe('280px');
     });
 
     it('should have text-overflow: ellipsis style applied', () => {
       createFixture();
 
-      const style = getChipComputedStyle();
+      const style = getChipTextComputedStyle();
 
       expect(style.textOverflow).toBe('ellipsis');
     });
@@ -394,7 +408,7 @@ describe('TopbarComponent with chip in left content', () => {
     it('should have overflow: hidden style applied', () => {
       createFixture();
 
-      const style = getChipComputedStyle();
+      const style = getChipTextComputedStyle();
 
       expect(style.overflow).toBe('hidden');
     });
@@ -402,7 +416,7 @@ describe('TopbarComponent with chip in left content', () => {
     it('should have white-space: nowrap style applied', () => {
       createFixture();
 
-      const style = getChipComputedStyle();
+      const style = getChipTextComputedStyle();
 
       expect(style.whiteSpace).toBe('nowrap');
     });
@@ -526,6 +540,19 @@ describe('TopbarComponent center section wrapping', () => {
           containerWidth: 300,
           leftWidth: 160,
           rightWidth: 120,
+          centerContentWidth: 200,
+          gap: 8,
+        }),
+      ).toBe(true);
+    });
+
+    it('should wrap when one side exceeds its half of remaining space', () => {
+      // Total width would fit, but left is wider than its (container - center - gaps)/2 share.
+      expect(
+        shouldWrapCenter({
+          containerWidth: 600,
+          leftWidth: 260,
+          rightWidth: 20,
           centerContentWidth: 200,
           gap: 8,
         }),

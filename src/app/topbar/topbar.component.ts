@@ -33,8 +33,16 @@ export function shouldWrapCenter(params: {
   const gap = Number.isFinite(params.gap) ? params.gap : 0;
 
   if (containerWidth <= 0 || centerContentWidth <= 0) return false;
-  const required = leftWidth + rightWidth + centerContentWidth + 2 * gap;
-  return required > containerWidth;
+
+  // In the single-row grid, the center column is `auto` and left/right are `1fr`.
+  // That means the remaining space (after center + gaps) is split evenly between
+  // left and right, regardless of their intrinsic sizes. So we need to wrap the
+  // center if either side cannot fit within its half.
+  const remainingForSides = containerWidth - centerContentWidth - 2 * gap;
+  if (remainingForSides <= 0) return true;
+
+  const perSide = remainingForSides / 2;
+  return leftWidth > perSide || rightWidth > perSide;
 }
 
 @Component({
@@ -138,13 +146,45 @@ export class TopbarComponent implements AfterViewInit, OnDestroy {
     const rightEl = this.rightSectionRef.nativeElement;
     const centerInnerEl = this.centerInnerRef.nativeElement;
 
-    const containerWidth = topbarEl.getBoundingClientRect().width;
-    const leftWidth = leftEl.getBoundingClientRect().width;
-    const rightWidth = rightEl.getBoundingClientRect().width;
+    const rightWidth = rightEl.scrollWidth;
     const centerContentWidth = centerInnerEl.scrollWidth;
 
     const computed = getComputedStyle(topbarEl);
+    const paddingLeft = Number.parseFloat(computed.paddingLeft) || 0;
+    const paddingRight = Number.parseFloat(computed.paddingRight) || 0;
+    const containerWidth = Math.max(0, topbarEl.getBoundingClientRect().width - paddingLeft - paddingRight);
     const gap = Number.parseFloat(computed.columnGap) || Number.parseFloat(computed.gap) || 8;
+
+    // Left side is allowed to shrink only via its projected content (e.g. a chip),
+    // but the title should keep its intrinsic width. Wrap the center only once the
+    // left content reaches its minimum width.
+    let leftWidth = leftEl.getBoundingClientRect().width;
+    const backTitleEl = leftEl.querySelector<HTMLElement>('.topbar__back-title');
+    const leftContentEl = leftEl.querySelector<HTMLElement>('.topbar__left-content');
+
+    if (backTitleEl) {
+      const leftComputed = getComputedStyle(leftEl);
+      const leftGap =
+        Number.parseFloat(leftComputed.columnGap) || Number.parseFloat(leftComputed.gap) || 8;
+
+      const backTitleWidth = backTitleEl.scrollWidth;
+      let leftContentMinWidth = 0;
+
+      if (leftContentEl) {
+        const chipEl = leftContentEl.querySelector<HTMLElement>('.chip');
+        if (chipEl) {
+          const chipMinWidth = Number.parseFloat(getComputedStyle(chipEl).minWidth);
+          leftContentMinWidth = Number.isFinite(chipMinWidth)
+            ? chipMinWidth
+            : chipEl.getBoundingClientRect().width;
+        } else {
+          leftContentMinWidth = leftContentEl.getBoundingClientRect().width;
+        }
+      }
+
+      // leftEl is a flex row: [backTitleEl] [leftContentEl]. When leftContentEl exists, a gap applies.
+      leftWidth = backTitleWidth + (leftContentEl ? leftGap : 0) + leftContentMinWidth;
+    }
 
     const shouldWrap = shouldWrapCenter({
       containerWidth,

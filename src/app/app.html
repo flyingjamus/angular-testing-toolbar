@@ -1,6 +1,8 @@
 <app-topbar title="Dashboard" [showBackButton]="true" (backClick)="onBackClick()">
   <ng-template topbarLeftContent>
-    <span class="chip">This is a very long chip label that should truncate with ellipsis</span>
+    <span class="chip">
+      <span class="chip__text">This is a very long chip label that should truncate with ellipsis</span>
+    </span>
   </ng-template>
   <ng-template topbarCenterContent>
     <nav class="demo-nav">
