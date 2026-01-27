@@ -45,6 +45,41 @@ export function shouldWrapCenter(params: {
   return leftWidth > perSide || rightWidth > perSide;
 }
 
+function getPxNumber(value: string): number | undefined {
+  if (!value) return undefined;
+  if (value === 'auto') return undefined;
+  const num = Number.parseFloat(value);
+  return Number.isFinite(num) ? num : undefined;
+}
+
+function measureMinWidthOfFlexRow(containerEl: HTMLElement): number {
+  const containerStyle = getComputedStyle(containerEl);
+  const gap =
+    getPxNumber(containerStyle.columnGap) ??
+    getPxNumber(containerStyle.gap) ??
+    getPxNumber(containerStyle.rowGap) ??
+    0;
+
+  const children = Array.from(containerEl.children).filter(
+    (el): el is HTMLElement => el instanceof HTMLElement,
+  );
+  if (children.length === 0) return 0;
+
+  let total = 0;
+  for (const child of children) {
+    const childStyle = getComputedStyle(child);
+
+    const minWidth = getPxNumber(childStyle.minWidth) ?? child.getBoundingClientRect().width;
+    const marginLeft = getPxNumber(childStyle.marginLeft) ?? 0;
+    const marginRight = getPxNumber(childStyle.marginRight) ?? 0;
+
+    total += Math.max(0, minWidth) + Math.max(0, marginLeft) + Math.max(0, marginRight);
+  }
+
+  total += gap * (children.length - 1);
+  return total;
+}
+
 @Component({
   selector: 'app-topbar',
   standalone: true,
@@ -146,7 +181,7 @@ export class TopbarComponent implements AfterViewInit, OnDestroy {
     const rightEl = this.rightSectionRef.nativeElement;
     const centerInnerEl = this.centerInnerRef.nativeElement;
 
-    const rightWidth = rightEl.scrollWidth;
+    const rightWidth = measureMinWidthOfFlexRow(rightEl);
     const centerContentWidth = centerInnerEl.scrollWidth;
 
     const computed = getComputedStyle(topbarEl);
@@ -171,15 +206,7 @@ export class TopbarComponent implements AfterViewInit, OnDestroy {
       let leftContentMinWidth = 0;
 
       if (leftContentEl) {
-        const chipEl = leftContentEl.querySelector<HTMLElement>('.chip');
-        if (chipEl) {
-          const chipMinWidth = Number.parseFloat(getComputedStyle(chipEl).minWidth);
-          leftContentMinWidth = Number.isFinite(chipMinWidth)
-            ? chipMinWidth
-            : chipEl.getBoundingClientRect().width;
-        } else {
-          leftContentMinWidth = leftContentEl.getBoundingClientRect().width;
-        }
+        leftContentMinWidth = measureMinWidthOfFlexRow(leftContentEl);
       }
 
       // leftEl is a flex row: [backTitleEl] [leftContentEl]. When leftContentEl exists, a gap applies.

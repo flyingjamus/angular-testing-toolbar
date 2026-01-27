@@ -310,6 +310,52 @@ class CenterWrapTestHostComponent {
   containerWidth = 800;
 }
 
+@Component({
+  standalone: true,
+  imports: [
+    TopbarComponent,
+    TopbarLeftContentDirective,
+    TopbarCenterContentDirective,
+    TopbarRightContentDirective,
+  ],
+  template: `
+    <div class="test-container" [style.width.px]="containerWidth">
+      <app-topbar>
+        <ng-template topbarLeftContent>
+          <span class="left-box" [style.min-width.px]="leftMinWidth">Left</span>
+        </ng-template>
+        <ng-template topbarCenterContent>
+          <span class="center-content">Center</span>
+        </ng-template>
+        <ng-template topbarRightContent>
+          <button class="right-button" [style.min-width.px]="rightMinWidth">Action</button>
+        </ng-template>
+      </app-topbar>
+    </div>
+  `,
+  styles: [`
+    .test-container {
+      container-type: inline-size;
+    }
+    .left-box {
+      display: inline-block;
+      white-space: nowrap;
+    }
+    .center-content {
+      white-space: nowrap;
+    }
+    .right-button {
+      padding: 8px 16px;
+      white-space: nowrap;
+    }
+  `]
+})
+class MinWidthWrapTestHostComponent {
+  containerWidth = 800;
+  leftMinWidth = 0;
+  rightMinWidth = 0;
+}
+
 describe('TopbarComponent with chip in left content', () => {
   let fixture: ComponentFixture<ChipTestHostComponent>;
   let hostComponent: ChipTestHostComponent;
@@ -761,5 +807,88 @@ describe('TopbarComponent center section wrapping', () => {
 
       expect(style.justifyContent).toBe('center');
     });
+  });
+});
+
+describe('TopbarComponent min-width measurement (left/right)', () => {
+  let fixture: ComponentFixture<MinWidthWrapTestHostComponent>;
+  let hostComponent: MinWidthWrapTestHostComponent;
+
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
+      imports: [MinWidthWrapTestHostComponent],
+    }).compileComponents();
+  });
+
+  function createFixture(config: {
+    containerWidth?: number;
+    leftMinWidth?: number;
+    rightMinWidth?: number;
+  } = {}): void {
+    fixture = TestBed.createComponent(MinWidthWrapTestHostComponent);
+    hostComponent = fixture.componentInstance;
+    if (config.containerWidth !== undefined) hostComponent.containerWidth = config.containerWidth;
+    if (config.leftMinWidth !== undefined) hostComponent.leftMinWidth = config.leftMinWidth;
+    if (config.rightMinWidth !== undefined) hostComponent.rightMinWidth = config.rightMinWidth;
+    fixture.detectChanges();
+  }
+
+  function getTopbar(): HTMLElement {
+    return fixture.debugElement.query(By.css('.topbar')).nativeElement;
+  }
+
+  function getCenterInner(): HTMLElement {
+    return fixture.debugElement.query(By.css('.topbar__center-inner')).nativeElement;
+  }
+
+  function updateWithMockedContainerAndCenter(config: { containerWidth: number; centerContentWidth: number }): void {
+    const topbarEl = getTopbar();
+    const centerEl = getCenterInner();
+
+    topbarEl.getBoundingClientRect = () =>
+      ({
+        width: config.containerWidth,
+        height: 0,
+        top: 0,
+        bottom: 0,
+        left: 0,
+        right: config.containerWidth,
+        x: 0,
+        y: 0,
+        toJSON: () => ({}),
+      }) as DOMRect;
+
+    Object.defineProperty(centerEl, 'scrollWidth', {
+      configurable: true,
+      value: config.centerContentWidth,
+    });
+
+    const topbarCmp = fixture.debugElement.query(By.directive(TopbarComponent)).componentInstance;
+    (topbarCmp as any).updateCenterWrapState();
+    fixture.detectChanges();
+  }
+
+  it('wraps when left content min-width exceeds its share', () => {
+    createFixture({ containerWidth: 500, leftMinWidth: 160, rightMinWidth: 0 });
+
+    updateWithMockedContainerAndCenter({ containerWidth: 500, centerContentWidth: 200 });
+
+    expect(getTopbar().classList.contains('topbar--center-wrapped')).toBe(true);
+  });
+
+  it('wraps when right content min-width exceeds its share', () => {
+    createFixture({ containerWidth: 500, leftMinWidth: 0, rightMinWidth: 160 });
+
+    updateWithMockedContainerAndCenter({ containerWidth: 500, centerContentWidth: 200 });
+
+    expect(getTopbar().classList.contains('topbar--center-wrapped')).toBe(true);
+  });
+
+  it('does not wrap when both sides fit their shares at min-width', () => {
+    createFixture({ containerWidth: 600, leftMinWidth: 120, rightMinWidth: 120 });
+
+    updateWithMockedContainerAndCenter({ containerWidth: 600, centerContentWidth: 200 });
+
+    expect(getTopbar().classList.contains('topbar--center-wrapped')).toBe(false);
   });
 });
