@@ -17,3 +17,9 @@ export class TopbarCenterContentDirective {}
   standalone: true,
 })
 export class TopbarRightContentDirective {}
+
+@Directive({
+  selector: '[topbarRightFixedContent]',
+  standalone: true,
+})
+export class TopbarRightFixedContentDirective {}

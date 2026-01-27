@@ -104,6 +104,25 @@
     overflow: hidden;
   }
 
+  &__right-fixed {
+    display: flex;
+    align-items: center;
+    min-width: 0;
+    overflow: hidden;
+    flex: 0 0 auto;
+  }
+
+  &__right-content {
+    display: flex;
+    align-items: center;
+    min-width: 0;
+    flex: 1 1 auto;
+
+    :where(.chip) {
+      flex: 0 1 auto;
+    }
+  }
+
   &.topbar--center-wrapped {
     grid-template-areas:
       'left right'

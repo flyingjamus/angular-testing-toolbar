@@ -3,4 +3,5 @@ export {
   TopbarLeftContentDirective,
   TopbarCenterContentDirective,
   TopbarRightContentDirective,
+  TopbarRightFixedContentDirective,
 } from './topbar.directives';

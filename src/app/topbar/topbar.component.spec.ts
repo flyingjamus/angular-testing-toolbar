@@ -6,6 +6,7 @@ import {
   TopbarLeftContentDirective,
   TopbarCenterContentDirective,
   TopbarRightContentDirective,
+  TopbarRightFixedContentDirective,
 } from './topbar.directives';
 
 @Component({
@@ -15,6 +16,7 @@ import {
     TopbarLeftContentDirective,
     TopbarCenterContentDirective,
     TopbarRightContentDirective,
+    TopbarRightFixedContentDirective,
   ],
   template: `
     <app-topbar [title]="title" [showBackButton]="showBackButton" (backClick)="onBackClick()">
@@ -23,6 +25,9 @@ import {
       </ng-template>
       <ng-template topbarCenterContent>
         <span class="center-content">Center Content</span>
+      </ng-template>
+      <ng-template topbarRightFixedContent>
+        <span class="right-fixed-content">Right Fixed</span>
       </ng-template>
       <ng-template topbarRightContent>
         <span class="right-content">Right Content</span>
@@ -132,6 +137,12 @@ describe('TopbarComponent', () => {
       expect(rightContent.nativeElement.textContent).toBe('Right Content');
     });
 
+    it('should render right fixed content', () => {
+      const rightFixedContent = fixture.debugElement.query(By.css('.right-fixed-content'));
+      expect(rightFixedContent).toBeTruthy();
+      expect(rightFixedContent.nativeElement.textContent).toBe('Right Fixed');
+    });
+
     it('should place left content in the left section', () => {
       const leftSection = fixture.debugElement.query(By.css('.topbar__left-section'));
       const leftContent = leftSection.query(By.css('.left-content'));
@@ -148,6 +159,12 @@ describe('TopbarComponent', () => {
       const rightSection = fixture.debugElement.query(By.css('.topbar__right-section'));
       const rightContent = rightSection.query(By.css('.right-content'));
       expect(rightContent).toBeTruthy();
+    });
+
+    it('should place right fixed content in the right section', () => {
+      const rightSection = fixture.debugElement.query(By.css('.topbar__right-section'));
+      const rightFixedContent = rightSection.query(By.css('.right-fixed-content'));
+      expect(rightFixedContent).toBeTruthy();
     });
   });
 
@@ -171,6 +188,22 @@ describe('TopbarComponent', () => {
 
       expect(children[0].nativeElement.classList.contains('topbar__back-title')).toBe(true);
       expect(children[1].nativeElement.classList.contains('topbar__left-content')).toBe(true);
+    });
+
+    it('should wrap projected right content in the right content container', () => {
+      createFixture();
+
+      const rightContentContainer = fixture.debugElement.query(By.css('.topbar__right-content'));
+      expect(rightContentContainer).toBeTruthy();
+      expect(rightContentContainer.query(By.css('.right-content'))).toBeTruthy();
+    });
+
+    it('should render right fixed content in the right fixed container', () => {
+      createFixture();
+
+      const rightFixedContainer = fixture.debugElement.query(By.css('.topbar__right-fixed'));
+      expect(rightFixedContainer).toBeTruthy();
+      expect(rightFixedContainer.query(By.css('.right-fixed-content'))).toBeTruthy();
     });
   });
 
@@ -359,6 +392,49 @@ class RightChipTestHostComponent {
 })
 class CenterWrapTestHostComponent {
   chipText = 'Chip Label';
+  containerWidth = 800;
+}
+
+@Component({
+  standalone: true,
+  imports: [
+    TopbarComponent,
+    TopbarCenterContentDirective,
+    TopbarRightContentDirective,
+    TopbarRightFixedContentDirective,
+  ],
+  template: `
+    <div class="test-container" [style.width.px]="containerWidth">
+      <app-topbar>
+        <ng-template topbarCenterContent>
+          <span class="center-content">Center</span>
+        </ng-template>
+        <ng-template topbarRightFixedContent>
+          <span class="right-fixed">Fixed</span>
+        </ng-template>
+        <ng-template topbarRightContent>
+          <button class="right-button">Action</button>
+        </ng-template>
+      </app-topbar>
+    </div>
+  `,
+  styles: [`
+    .test-container {
+      container-type: inline-size;
+    }
+    .center-content {
+      white-space: nowrap;
+    }
+    .right-fixed {
+      white-space: nowrap;
+    }
+    .right-button {
+      padding: 8px 16px;
+      white-space: nowrap;
+    }
+  `]
+})
+class RightFixedWrapTestHostComponent {
   containerWidth = 800;
 }
 
@@ -837,13 +913,13 @@ describe('TopbarComponent center section wrapping', () => {
 
   function applyMockedMeasurementsAndUpdate(measurements: {
     containerWidth: number;
-    leftWidth: number;
-    rightWidth: number;
+    leftFixedWidth?: number;
+    leftFlexibleWidth?: number;
+    rightFixedWidth?: number;
+    rightFlexibleWidth?: number;
     centerContentWidth: number;
   }): void {
     const topbarEl = getTopbar();
-    const leftEl = getLeftSection();
-    const rightEl = getRightSection();
     const centerEl = getCenterInner();
 
     topbarEl.getBoundingClientRect = () =>
@@ -859,31 +935,55 @@ describe('TopbarComponent center section wrapping', () => {
         toJSON: () => ({}),
       }) as DOMRect;
 
-    leftEl.getBoundingClientRect = () =>
-      ({
-        width: measurements.leftWidth,
-        height: 0,
-        top: 0,
-        bottom: 0,
-        left: 0,
-        right: measurements.leftWidth,
-        x: 0,
-        y: 0,
-        toJSON: () => ({}),
-      }) as DOMRect;
+    const backTitleEl = topbarEl.querySelector<HTMLElement>('.topbar__back-title');
+    if (backTitleEl) {
+      Object.defineProperty(backTitleEl, 'scrollWidth', {
+        configurable: true,
+        value: measurements.leftFixedWidth ?? 0,
+      });
+    }
 
-    rightEl.getBoundingClientRect = () =>
-      ({
-        width: measurements.rightWidth,
-        height: 0,
-        top: 0,
-        bottom: 0,
-        left: 0,
-        right: measurements.rightWidth,
-        x: 0,
-        y: 0,
-        toJSON: () => ({}),
-      }) as DOMRect;
+    const leftFlexibleChild = topbarEl.querySelector<HTMLElement>('.topbar__left-content > *');
+    if (leftFlexibleChild) {
+      const leftFlexibleWidth = measurements.leftFlexibleWidth ?? 0;
+      leftFlexibleChild.getBoundingClientRect = () =>
+        ({
+          width: leftFlexibleWidth,
+          height: 0,
+          top: 0,
+          bottom: 0,
+          left: 0,
+          right: leftFlexibleWidth,
+          x: 0,
+          y: 0,
+          toJSON: () => ({}),
+        }) as DOMRect;
+    }
+
+    const rightFixedEl = topbarEl.querySelector<HTMLElement>('.topbar__right-fixed');
+    if (rightFixedEl) {
+      Object.defineProperty(rightFixedEl, 'scrollWidth', {
+        configurable: true,
+        value: measurements.rightFixedWidth ?? 0,
+      });
+    }
+
+    const rightFlexibleChild = topbarEl.querySelector<HTMLElement>('.topbar__right-content > *');
+    if (rightFlexibleChild) {
+      const rightFlexibleWidth = measurements.rightFlexibleWidth ?? 0;
+      rightFlexibleChild.getBoundingClientRect = () =>
+        ({
+          width: rightFlexibleWidth,
+          height: 0,
+          top: 0,
+          bottom: 0,
+          left: 0,
+          right: rightFlexibleWidth,
+          x: 0,
+          y: 0,
+          toJSON: () => ({}),
+        }) as DOMRect;
+    }
 
     Object.defineProperty(centerEl, 'scrollWidth', {
       configurable: true,
@@ -921,8 +1021,10 @@ describe('TopbarComponent center section wrapping', () => {
 
       applyMockedMeasurementsAndUpdate({
         containerWidth: 800,
-        leftWidth: 160,
-        rightWidth: 140,
+        leftFixedWidth: 0,
+        leftFlexibleWidth: 152,
+        rightFixedWidth: 0,
+        rightFlexibleWidth: 140,
         centerContentWidth: 200,
       });
 
@@ -936,8 +1038,10 @@ describe('TopbarComponent center section wrapping', () => {
 
       applyMockedMeasurementsAndUpdate({
         containerWidth: 300,
-        leftWidth: 160,
-        rightWidth: 120,
+        leftFixedWidth: 0,
+        leftFlexibleWidth: 152,
+        rightFixedWidth: 0,
+        rightFlexibleWidth: 120,
         centerContentWidth: 200,
       });
 
@@ -949,16 +1053,20 @@ describe('TopbarComponent center section wrapping', () => {
 
       applyMockedMeasurementsAndUpdate({
         containerWidth: 300,
-        leftWidth: 160,
-        rightWidth: 120,
+        leftFixedWidth: 0,
+        leftFlexibleWidth: 152,
+        rightFixedWidth: 0,
+        rightFlexibleWidth: 120,
         centerContentWidth: 200,
       });
       expect(getTopbar().classList.contains('topbar--center-wrapped')).toBe(true);
 
       applyMockedMeasurementsAndUpdate({
         containerWidth: 600,
-        leftWidth: 160,
-        rightWidth: 120,
+        leftFixedWidth: 0,
+        leftFlexibleWidth: 152,
+        rightFixedWidth: 0,
+        rightFlexibleWidth: 120,
         centerContentWidth: 200,
       });
       expect(getTopbar().classList.contains('topbar--center-wrapped')).toBe(false);
@@ -971,8 +1079,10 @@ describe('TopbarComponent center section wrapping', () => {
 
       applyMockedMeasurementsAndUpdate({
         containerWidth: 500,
-        leftWidth: 160,
-        rightWidth: 120,
+        leftFixedWidth: 0,
+        leftFlexibleWidth: 152,
+        rightFixedWidth: 0,
+        rightFlexibleWidth: 120,
         centerContentWidth: 400,
       });
 
@@ -989,8 +1099,10 @@ describe('TopbarComponent center section wrapping', () => {
 
       applyMockedMeasurementsAndUpdate({
         containerWidth: 300,
-        leftWidth: 200,
-        rightWidth: 120,
+        leftFixedWidth: 0,
+        leftFlexibleWidth: 192,
+        rightFixedWidth: 0,
+        rightFlexibleWidth: 120,
         centerContentWidth: 180,
       });
 
@@ -1024,6 +1136,88 @@ describe('TopbarComponent center section wrapping', () => {
 
       expect(style.justifyContent).toBe('center');
     });
+  });
+});
+
+describe('TopbarComponent with right fixed content', () => {
+  let fixture: ComponentFixture<RightFixedWrapTestHostComponent>;
+  let hostComponent: RightFixedWrapTestHostComponent;
+
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
+      imports: [RightFixedWrapTestHostComponent],
+    }).compileComponents();
+  });
+
+  function createFixture(config: { containerWidth?: number } = {}): void {
+    fixture = TestBed.createComponent(RightFixedWrapTestHostComponent);
+    hostComponent = fixture.componentInstance;
+    if (config.containerWidth !== undefined) hostComponent.containerWidth = config.containerWidth;
+    fixture.detectChanges();
+  }
+
+  function getTopbar(): HTMLElement {
+    return fixture.debugElement.query(By.css('.topbar')).nativeElement;
+  }
+
+  function getCenterInner(): HTMLElement {
+    return fixture.debugElement.query(By.css('.topbar__center-inner')).nativeElement;
+  }
+
+  it('should project right fixed content into the right fixed container', () => {
+    createFixture();
+    const fixedContainer = fixture.debugElement.query(By.css('.topbar__right-fixed'));
+    expect(fixedContainer).toBeTruthy();
+    expect(fixedContainer.query(By.css('.right-fixed'))).toBeTruthy();
+  });
+
+  it('should include right fixed width in wrap decision', () => {
+    createFixture({ containerWidth: 420 });
+
+    const topbarEl = getTopbar();
+    const centerEl = getCenterInner();
+    const rightFixedEl = topbarEl.querySelector<HTMLElement>('.topbar__right-fixed');
+    const rightButton = topbarEl.querySelector<HTMLElement>('.topbar__right-content > .right-button');
+
+    topbarEl.getBoundingClientRect = () =>
+      ({
+        width: 420,
+        height: 0,
+        top: 0,
+        bottom: 0,
+        left: 0,
+        right: 420,
+        x: 0,
+        y: 0,
+        toJSON: () => ({}),
+      }) as DOMRect;
+
+    if (rightFixedEl) {
+      Object.defineProperty(rightFixedEl, 'scrollWidth', { configurable: true, value: 160 });
+    }
+
+    if (rightButton) {
+      rightButton.getBoundingClientRect = () =>
+        ({
+          width: 120,
+          height: 0,
+          top: 0,
+          bottom: 0,
+          left: 0,
+          right: 120,
+          x: 0,
+          y: 0,
+          toJSON: () => ({}),
+        }) as DOMRect;
+    }
+
+    Object.defineProperty(centerEl, 'scrollWidth', { configurable: true, value: 200 });
+
+    const topbarCmp = fixture.debugElement.query(By.directive(TopbarComponent)).componentInstance;
+    (topbarCmp as any).updateCenterWrapState();
+    fixture.detectChanges();
+
+    expect(getTopbar().classList.contains('topbar--center-wrapped')).toBe(true);
   });
 });
 

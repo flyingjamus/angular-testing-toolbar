@@ -27,7 +27,14 @@
 
   <div class="topbar__right-section" #rightSection>
     @if (rightContent) {
-      <ng-container *ngTemplateOutlet="rightContent"></ng-container>
+      <div class="topbar__right-content">
+        <ng-container *ngTemplateOutlet="rightContent"></ng-container>
+      </div>
+    }
+    @if (rightFixedContent) {
+      <div class="topbar__right-fixed">
+        <ng-container *ngTemplateOutlet="rightFixedContent"></ng-container>
+      </div>
     }
   </div>
 </header>

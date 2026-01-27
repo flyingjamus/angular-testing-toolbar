@@ -4,6 +4,7 @@ import {
   TopbarLeftContentDirective,
   TopbarCenterContentDirective,
   TopbarRightContentDirective,
+  TopbarRightFixedContentDirective,
 } from './topbar';
 
 @Component({
@@ -13,6 +14,7 @@ import {
     TopbarLeftContentDirective,
     TopbarCenterContentDirective,
     TopbarRightContentDirective,
+    TopbarRightFixedContentDirective,
   ],
   templateUrl: './app.html',
   styleUrl: './app.scss',

@@ -17,6 +17,7 @@ import {
   TopbarLeftContentDirective,
   TopbarCenterContentDirective,
   TopbarRightContentDirective,
+  TopbarRightFixedContentDirective,
 } from './topbar.directives';
 
 export function shouldWrapCenter(params: {
@@ -80,6 +81,23 @@ function measureMinWidthOfFlexRow(containerEl: HTMLElement): number {
   return total;
 }
 
+function getGapPx(el: HTMLElement): number {
+  const computed = getComputedStyle(el);
+  return Number.parseFloat(computed.columnGap) || Number.parseFloat(computed.gap) || 0;
+}
+
+function measureFixedPlusFlexibleWidth(params: {
+  sectionEl: HTMLElement;
+  fixedEl: HTMLElement | null;
+  flexibleEl: HTMLElement | null;
+}): number {
+  const fixedWidth = params.fixedEl ? params.fixedEl.scrollWidth : 0;
+  const flexibleWidth = params.flexibleEl ? measureMinWidthOfFlexRow(params.flexibleEl) : 0;
+  const gap = params.fixedEl && params.flexibleEl ? getGapPx(params.sectionEl) : 0;
+
+  return fixedWidth + gap + flexibleWidth;
+}
+
 @Component({
   selector: 'app-topbar',
   standalone: true,
@@ -116,6 +134,9 @@ export class TopbarComponent implements AfterViewInit, OnDestroy {
 
   @ContentChild(TopbarRightContentDirective, { read: TemplateRef })
   rightContent?: TemplateRef<unknown>;
+
+  @ContentChild(TopbarRightFixedContentDirective, { read: TemplateRef })
+  rightFixedContent?: TemplateRef<unknown>;
 
   private resizeObserver?: ResizeObserver;
   private layoutUpdateScheduled = false;
@@ -181,7 +202,6 @@ export class TopbarComponent implements AfterViewInit, OnDestroy {
     const rightEl = this.rightSectionRef.nativeElement;
     const centerInnerEl = this.centerInnerRef.nativeElement;
 
-    const rightWidth = measureMinWidthOfFlexRow(rightEl);
     const centerContentWidth = centerInnerEl.scrollWidth;
 
     const computed = getComputedStyle(topbarEl);
@@ -190,28 +210,17 @@ export class TopbarComponent implements AfterViewInit, OnDestroy {
     const containerWidth = Math.max(0, topbarEl.getBoundingClientRect().width - paddingLeft - paddingRight);
     const gap = Number.parseFloat(computed.columnGap) || Number.parseFloat(computed.gap) || 8;
 
-    // Left side is allowed to shrink only via its projected content (e.g. a chip),
-    // but the title should keep its intrinsic width. Wrap the center only once the
-    // left content reaches its minimum width.
-    let leftWidth = leftEl.getBoundingClientRect().width;
-    const backTitleEl = leftEl.querySelector<HTMLElement>('.topbar__back-title');
-    const leftContentEl = leftEl.querySelector<HTMLElement>('.topbar__left-content');
+    const leftWidth = measureFixedPlusFlexibleWidth({
+      sectionEl: leftEl,
+      fixedEl: leftEl.querySelector<HTMLElement>('.topbar__back-title'),
+      flexibleEl: leftEl.querySelector<HTMLElement>('.topbar__left-content'),
+    });
 
-    if (backTitleEl) {
-      const leftComputed = getComputedStyle(leftEl);
-      const leftGap =
-        Number.parseFloat(leftComputed.columnGap) || Number.parseFloat(leftComputed.gap) || 8;
-
-      const backTitleWidth = backTitleEl.scrollWidth;
-      let leftContentMinWidth = 0;
-
-      if (leftContentEl) {
-        leftContentMinWidth = measureMinWidthOfFlexRow(leftContentEl);
-      }
-
-      // leftEl is a flex row: [backTitleEl] [leftContentEl]. When leftContentEl exists, a gap applies.
-      leftWidth = backTitleWidth + (leftContentEl ? leftGap : 0) + leftContentMinWidth;
-    }
+    const rightWidth = measureFixedPlusFlexibleWidth({
+      sectionEl: rightEl,
+      fixedEl: rightEl.querySelector<HTMLElement>('.topbar__right-fixed'),
+      flexibleEl: rightEl.querySelector<HTMLElement>('.topbar__right-content'),
+    });
 
     const shouldWrap = shouldWrapCenter({
       containerWidth,
