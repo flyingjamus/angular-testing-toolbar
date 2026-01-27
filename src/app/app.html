@@ -1,0 +1,28 @@
+<app-topbar title="Dashboard" [showBackButton]="true" (backClick)="onBackClick()">
+  <ng-template topbarLeftContent>
+    <button class="demo-btn">Filter</button>
+  </ng-template>
+  <ng-template topbarCenterContent>
+    <nav class="demo-nav">
+      <a href="#">Home</a>
+      <a href="#">Products</a>
+      <a href="#">About</a>
+    </nav>
+  </ng-template>
+  <ng-template topbarRightContent>
+    <button class="demo-btn">Settings</button>
+    <button class="demo-btn demo-btn--primary">Profile</button>
+  </ng-template>
+</app-topbar>
+
+<main class="demo-content">
+  <h2>Topbar Component Demo</h2>
+  <p>The topbar above demonstrates:</p>
+  <ul>
+    <li>Back button (left, before title)</li>
+    <li>Title ("Dashboard")</li>
+    <li>Left content (Filter button)</li>
+    <li>Center content (Navigation - always centered)</li>
+    <li>Right content (Settings and Profile buttons)</li>
+  </ul>
+</main>

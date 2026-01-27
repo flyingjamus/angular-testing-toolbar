@@ -1,0 +1,31 @@
+<header class="topbar">
+  <div class="topbar__left-section">
+    <div class="topbar__back-title">
+      @if (showBackButton) {
+        <button class="topbar__back-button" (click)="onBackClick()" aria-label="Go back">
+          <span class="topbar__back-icon">&larr;</span>
+        </button>
+      }
+      @if (title) {
+        <h1 class="topbar__title">{{ title }}</h1>
+      }
+    </div>
+    @if (leftContent) {
+      <div class="topbar__left-content">
+        <ng-container *ngTemplateOutlet="leftContent"></ng-container>
+      </div>
+    }
+  </div>
+
+  <div class="topbar__center-section">
+    @if (centerContent) {
+      <ng-container *ngTemplateOutlet="centerContent"></ng-container>
+    }
+  </div>
+
+  <div class="topbar__right-section">
+    @if (rightContent) {
+      <ng-container *ngTemplateOutlet="rightContent"></ng-container>
+    }
+  </div>
+</header>

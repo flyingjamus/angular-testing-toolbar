@@ -1,0 +1,75 @@
+.topbar {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  padding: 0 16px;
+  height: 56px;
+  background-color: #fff;
+  border-bottom: 1px solid #e0e0e0;
+  box-sizing: border-box;
+
+  &__left-section {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    justify-self: start;
+  }
+
+  &__back-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  &__back-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    border-radius: 50%;
+    transition: background-color 0.2s;
+
+    &:hover {
+      background-color: rgba(0, 0, 0, 0.08);
+    }
+
+    &:focus {
+      outline: 2px solid #1976d2;
+      outline-offset: 2px;
+    }
+  }
+
+  &__back-icon {
+    font-size: 20px;
+  }
+
+  &__title {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 500;
+    white-space: nowrap;
+  }
+
+  &__left-content {
+    display: flex;
+    align-items: center;
+  }
+
+  &__center-section {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    justify-self: center;
+  }
+
+  &__right-section {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    justify-self: end;
+  }
+}
