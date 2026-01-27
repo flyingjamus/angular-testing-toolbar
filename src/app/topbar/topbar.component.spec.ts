@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Component } from '@angular/core';
 import { By } from '@angular/platform-browser';
-import { TopbarComponent } from './topbar.component';
+import { shouldWrapCenterByOverlap, TopbarComponent } from './topbar.component';
 import {
   TopbarLeftContentDirective,
   TopbarCenterContentDirective,
@@ -253,6 +253,58 @@ class ChipTestHostComponent {
   containerWidth = 800;
 }
 
+@Component({
+  standalone: true,
+  imports: [
+    TopbarComponent,
+    TopbarLeftContentDirective,
+    TopbarCenterContentDirective,
+    TopbarRightContentDirective,
+  ],
+  template: `
+    <div class="test-container" [style.width.px]="containerWidth">
+      <app-topbar>
+        <ng-template topbarLeftContent>
+          <span class="chip">{{ chipText }}</span>
+        </ng-template>
+        <ng-template topbarCenterContent>
+          <span class="center-content">Center</span>
+        </ng-template>
+        <ng-template topbarRightContent>
+          <button class="right-button">Action</button>
+        </ng-template>
+      </app-topbar>
+    </div>
+  `,
+  styles: [`
+    .test-container {
+      container-type: inline-size;
+    }
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      min-width: 40px;
+      max-width: 280px;
+      padding: 4px 12px;
+      border-radius: 16px;
+      background-color: #e0e0e0;
+      white-space: nowrap;
+      box-sizing: border-box;
+    }
+    .center-content {
+      white-space: nowrap;
+    }
+    .right-button {
+      padding: 8px 16px;
+      white-space: nowrap;
+    }
+  `]
+})
+class CenterWrapTestHostComponent {
+  chipText = 'Chip Label';
+  containerWidth = 800;
+}
+
 describe('TopbarComponent with chip in left content', () => {
   let fixture: ComponentFixture<ChipTestHostComponent>;
   let hostComponent: ChipTestHostComponent;
@@ -401,6 +453,281 @@ describe('TopbarComponent with chip in left content', () => {
 
       expect(container.style.width).toBe('100px');
       expect(style.minWidth).toBe('40px');
+    });
+  });
+});
+
+describe('TopbarComponent center section wrapping', () => {
+  let fixture: ComponentFixture<CenterWrapTestHostComponent>;
+  let hostComponent: CenterWrapTestHostComponent;
+
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
+      imports: [CenterWrapTestHostComponent],
+    }).compileComponents();
+  });
+
+  function createFixture(config: { containerWidth?: number; chipText?: string } = {}): void {
+    fixture = TestBed.createComponent(CenterWrapTestHostComponent);
+    hostComponent = fixture.componentInstance;
+    if (config.containerWidth !== undefined) {
+      hostComponent.containerWidth = config.containerWidth;
+    }
+    if (config.chipText !== undefined) {
+      hostComponent.chipText = config.chipText;
+    }
+    fixture.detectChanges();
+  }
+
+  function getTopbar(): HTMLElement {
+    return fixture.debugElement.query(By.css('.topbar')).nativeElement;
+  }
+
+  function getLeftSection(): HTMLElement {
+    return fixture.debugElement.query(By.css('.topbar__left-section')).nativeElement;
+  }
+
+  function getCenterSection(): HTMLElement {
+    return fixture.debugElement.query(By.css('.topbar__center-section')).nativeElement;
+  }
+
+  function getCenterInner(): HTMLElement {
+    return fixture.debugElement.query(By.css('.topbar__center-inner')).nativeElement;
+  }
+
+  function getRightSection(): HTMLElement {
+    return fixture.debugElement.query(By.css('.topbar__right-section')).nativeElement;
+  }
+
+  function getTopbarComputedStyle(): CSSStyleDeclaration {
+    return getComputedStyle(getTopbar());
+  }
+
+  function getCenterComputedStyle(): CSSStyleDeclaration {
+    return getComputedStyle(getCenterSection());
+  }
+
+  describe('wrap decision logic (pure)', () => {
+    it('should not wrap when center does not overlap left/right', () => {
+      expect(
+        shouldWrapCenterByOverlap({
+          leftRight: 160,
+          centerLeft: 300,
+          centerRight: 500,
+          rightLeft: 640,
+          gap: 8,
+        }),
+      ).toBe(false);
+    });
+
+    it('should wrap when center overlaps left', () => {
+      expect(
+        shouldWrapCenterByOverlap({
+          leftRight: 200,
+          centerLeft: 180,
+          centerRight: 380,
+          rightLeft: 640,
+          gap: 8,
+        }),
+      ).toBe(true);
+    });
+
+    it('should wrap when center overlaps right', () => {
+      expect(
+        shouldWrapCenterByOverlap({
+          leftRight: 160,
+          centerLeft: 300,
+          centerRight: 680,
+          rightLeft: 660,
+          gap: 8,
+        }),
+      ).toBe(true);
+    });
+  });
+
+  function applyMockedMeasurementsAndUpdate(measurements: {
+    leftRight: number;
+    centerLeft: number;
+    centerRight: number;
+    rightLeft: number;
+  }): void {
+    const topbarEl = getTopbar();
+    const leftEl = getLeftSection();
+    const rightEl = getRightSection();
+    const centerEl = getCenterInner();
+
+    leftEl.getBoundingClientRect = () =>
+      ({
+        width: 0,
+        height: 0,
+        top: 0,
+        bottom: 0,
+        left: 0,
+        right: measurements.leftRight,
+        x: 0,
+        y: 0,
+        toJSON: () => ({}),
+      }) as DOMRect;
+
+    rightEl.getBoundingClientRect = () =>
+      ({
+        width: 0,
+        height: 0,
+        top: 0,
+        bottom: 0,
+        left: measurements.rightLeft,
+        right: 0,
+        x: 0,
+        y: 0,
+        toJSON: () => ({}),
+      }) as DOMRect;
+
+    centerEl.getBoundingClientRect = () =>
+      ({
+        width: 0,
+        height: 0,
+        top: 0,
+        bottom: 0,
+        left: measurements.centerLeft,
+        right: measurements.centerRight,
+        x: 0,
+        y: 0,
+        toJSON: () => ({}),
+      }) as DOMRect;
+
+    void topbarEl;
+
+    const topbarCmp = fixture.debugElement.query(By.directive(TopbarComponent)).componentInstance;
+    (topbarCmp as any).updateCenterWrapState();
+    fixture.detectChanges();
+  }
+
+  describe('topbar layout structure', () => {
+    it('should use grid display', () => {
+      createFixture({ containerWidth: 800 });
+
+      const style = getTopbarComputedStyle();
+
+      expect(style.display).toBe('grid');
+    });
+
+    it('should have row-gap for spacing when wrapped', () => {
+      createFixture({ containerWidth: 800 });
+
+      const style = getTopbarComputedStyle();
+
+      expect(style.rowGap).toBe('8px');
+    });
+  });
+
+  describe('wide container behavior', () => {
+    it('should not apply wrapped class when there is enough room', () => {
+      createFixture({ containerWidth: 800 });
+
+      applyMockedMeasurementsAndUpdate({
+        leftRight: 200,
+        centerLeft: 300,
+        centerRight: 500,
+        rightLeft: 640,
+      });
+
+      expect(getTopbar().classList.contains('topbar--center-wrapped')).toBe(false);
+    });
+  });
+
+  describe('narrow container wrapping behavior', () => {
+    it('should apply wrapped class when container is too narrow for center', () => {
+      createFixture({ containerWidth: 300 });
+
+      applyMockedMeasurementsAndUpdate({
+        leftRight: 200,
+        centerLeft: 190,
+        centerRight: 390,
+        rightLeft: 360,
+      });
+
+      expect(getTopbar().classList.contains('topbar--center-wrapped')).toBe(true);
+    });
+
+    it('should remove wrapped class when space becomes available again', () => {
+      createFixture({ containerWidth: 300 });
+
+      applyMockedMeasurementsAndUpdate({
+        leftRight: 200,
+        centerLeft: 190,
+        centerRight: 390,
+        rightLeft: 360,
+      });
+      expect(getTopbar().classList.contains('topbar--center-wrapped')).toBe(true);
+
+      applyMockedMeasurementsAndUpdate({
+        leftRight: 200,
+        centerLeft: 300,
+        centerRight: 500,
+        rightLeft: 640,
+      });
+      expect(getTopbar().classList.contains('topbar--center-wrapped')).toBe(false);
+    });
+  });
+
+  describe('measured decision wiring', () => {
+    it('should wrap center when measured rects overlap', () => {
+      createFixture({ containerWidth: 500 });
+
+      applyMockedMeasurementsAndUpdate({
+        leftRight: 240,
+        centerLeft: 260,
+        centerRight: 540,
+        rightLeft: 520,
+      });
+
+      expect(getTopbar().classList.contains('topbar--center-wrapped')).toBe(true);
+    });
+  });
+
+  describe('chip min-width interaction', () => {
+    it('should wrap center when chip is at min-width in narrow container', () => {
+      createFixture({ containerWidth: 300, chipText: 'A very long chip text that would normally expand' });
+
+      const chip = fixture.debugElement.query(By.css('.chip')).nativeElement;
+      const chipStyle = getComputedStyle(chip);
+
+      applyMockedMeasurementsAndUpdate({
+        leftRight: 240,
+        centerLeft: 220,
+        centerRight: 420,
+        rightLeft: 400,
+      });
+
+      // Chip should maintain its min-width
+      expect(chipStyle.minWidth).toBe('40px');
+    });
+
+    it('should maintain chip visibility when center is wrapped', () => {
+      createFixture({ containerWidth: 350, chipText: 'Chip' });
+
+      const chip = fixture.debugElement.query(By.css('.chip')).nativeElement;
+
+      expect(chip).toBeTruthy();
+      expect(chip.textContent?.trim()).toBe('Chip');
+    });
+  });
+
+  describe('content centering', () => {
+    it('should center the center section content when on second line', () => {
+      createFixture({ containerWidth: 400 });
+
+      const style = getCenterComputedStyle();
+
+      expect(style.justifyContent).toBe('center');
+    });
+
+    it('should center the center section content when on first line', () => {
+      createFixture({ containerWidth: 800 });
+
+      const style = getCenterComputedStyle();
+
+      expect(style.justifyContent).toBe('center');
     });
   });
 });

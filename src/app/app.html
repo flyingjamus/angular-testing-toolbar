@@ -1,6 +1,6 @@
 <app-topbar title="Dashboard" [showBackButton]="true" (backClick)="onBackClick()">
   <ng-template topbarLeftContent>
-    <button class="demo-btn">Filter</button>
+    <span class="chip">This is a very long chip label that should truncate with ellipsis</span>
   </ng-template>
   <ng-template topbarCenterContent>
     <nav class="demo-nav">
@@ -21,8 +21,9 @@
   <ul>
     <li>Back button (left, before title)</li>
     <li>Title ("Dashboard")</li>
-    <li>Left content (Filter button)</li>
-    <li>Center content (Navigation - always centered)</li>
+    <li>Left content (Chip with ellipsis - min 40px, max 280px)</li>
+    <li>Center content (Navigation - wraps to second line when no room)</li>
     <li>Right content (Settings and Profile buttons)</li>
   </ul>
+  <p><strong>Resize the browser</strong> to see the center nav wrap to a second line when the chip reaches its minimum width.</p>
 </main>

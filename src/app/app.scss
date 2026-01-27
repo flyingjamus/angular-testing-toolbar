@@ -1,3 +1,18 @@
+.chip {
+  display: inline-flex;
+  align-items: center;
+  min-width: 40px;
+  max-width: 280px;
+  padding: 4px 12px;
+  border-radius: 16px;
+  background-color: #e0e0e0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  box-sizing: border-box;
+  font-size: 14px;
+}
+
 .demo-btn {
   padding: 8px 16px;
   border: 1px solid #ccc;

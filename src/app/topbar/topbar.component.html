@@ -1,5 +1,5 @@
-<header class="topbar">
-  <div class="topbar__left-section">
+<header class="topbar" #topbar>
+  <div class="topbar__left-section" #leftSection>
     <div class="topbar__back-title">
       @if (showBackButton) {
         <button class="topbar__back-button" (click)="onBackClick()" aria-label="Go back">
@@ -17,13 +17,15 @@
     }
   </div>
 
-  <div class="topbar__center-section">
-    @if (centerContent) {
-      <ng-container *ngTemplateOutlet="centerContent"></ng-container>
-    }
+  <div class="topbar__center-section" #centerSection>
+    <div class="topbar__center-inner" #centerInner>
+      @if (centerContent) {
+        <ng-container *ngTemplateOutlet="centerContent"></ng-container>
+      }
+    </div>
   </div>
 
-  <div class="topbar__right-section">
+  <div class="topbar__right-section" #rightSection>
     @if (rightContent) {
       <ng-container *ngTemplateOutlet="rightContent"></ng-container>
     }

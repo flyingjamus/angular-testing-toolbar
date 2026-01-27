@@ -1,18 +1,22 @@
 .topbar {
   display: grid;
-  grid-template-columns: 1fr auto 1fr;
+  grid-template-columns: auto 1fr auto;
+  grid-template-areas: 'left center right';
   align-items: center;
-  padding: 0 16px;
-  height: 56px;
+  padding: 8px 16px;
+  min-height: 56px;
   background-color: #fff;
   border-bottom: 1px solid #e0e0e0;
   box-sizing: border-box;
+  column-gap: 8px;
+  row-gap: 8px;
 
   &__left-section {
     display: flex;
     align-items: center;
     gap: 8px;
-    justify-self: start;
+    min-width: max-content;
+    grid-area: left;
   }
 
   &__back-title {
@@ -63,13 +67,34 @@
     display: flex;
     align-items: center;
     justify-content: center;
+    grid-area: center;
     justify-self: center;
+    min-width: 0;
+  }
+
+  &__center-inner {
+    display: inline-flex;
+    align-items: center;
+    min-width: 0;
+    white-space: nowrap;
   }
 
   &__right-section {
     display: flex;
     align-items: center;
     gap: 8px;
+    min-width: max-content;
+    grid-area: right;
     justify-self: end;
+  }
+
+  &.topbar--center-wrapped {
+    grid-template-areas:
+      'left . right'
+      'center center center';
+  }
+
+  &.topbar--center-wrapped &__center-section {
+    justify-self: stretch;
   }
 }
