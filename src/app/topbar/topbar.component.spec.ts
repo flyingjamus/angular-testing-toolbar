@@ -173,6 +173,18 @@ describe('TopbarComponent', () => {
       expect(children[1].nativeElement.classList.contains('topbar__left-content')).toBe(true);
     });
   });
+
+  describe('overflow handling', () => {
+    it('should clip overflow in left and right sections', () => {
+      createFixture({ showBackButton: true, title: 'Test Title' });
+
+      const leftSectionEl = fixture.debugElement.query(By.css('.topbar__left-section')).nativeElement as HTMLElement;
+      const rightSectionEl = fixture.debugElement.query(By.css('.topbar__right-section')).nativeElement as HTMLElement;
+
+      expect(getComputedStyle(leftSectionEl).overflow).toBe('hidden');
+      expect(getComputedStyle(rightSectionEl).overflow).toBe('hidden');
+    });
+  });
 });
 
 @Component({
@@ -254,6 +266,46 @@ describe('TopbarComponent without projected content', () => {
   `]
 })
 class ChipTestHostComponent {
+  chipText = 'Short';
+  containerWidth = 800;
+}
+
+@Component({
+  standalone: true,
+  imports: [TopbarComponent, TopbarRightContentDirective],
+  template: `
+    <div class="test-container" [style.width.px]="containerWidth">
+      <app-topbar>
+        <ng-template topbarRightContent>
+          <span class="chip" [attr.data-testid]="'chip'">
+            <span class="chip__text">{{ chipText }}</span>
+          </span>
+        </ng-template>
+      </app-topbar>
+    </div>
+  `,
+  styles: [`
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      min-width: 40px;
+      max-width: 280px;
+      padding: 4px 12px;
+      border-radius: 16px;
+      background-color: #e0e0e0;
+      overflow: hidden;
+      box-sizing: border-box;
+    }
+
+    .chip__text {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+  `]
+})
+class RightChipTestHostComponent {
   chipText = 'Short';
   containerWidth = 800;
 }
@@ -437,6 +489,171 @@ describe('TopbarComponent with chip in left content', () => {
       const style = getChipComputedStyle();
 
       // Verify truncation styles are applied
+      expect(textStyle.textOverflow).toBe('ellipsis');
+      expect(textStyle.overflow).toBe('hidden');
+      expect(textStyle.whiteSpace).toBe('nowrap');
+      expect(style.maxWidth).toBe('280px');
+    });
+
+    it('should have text-overflow: ellipsis style applied', () => {
+      createFixture();
+
+      const style = getChipTextComputedStyle();
+
+      expect(style.textOverflow).toBe('ellipsis');
+    });
+
+    it('should have overflow: hidden style applied', () => {
+      createFixture();
+
+      const style = getChipTextComputedStyle();
+
+      expect(style.overflow).toBe('hidden');
+    });
+
+    it('should have white-space: nowrap style applied', () => {
+      createFixture();
+
+      const style = getChipTextComputedStyle();
+
+      expect(style.whiteSpace).toBe('nowrap');
+    });
+  });
+
+  describe('responsive behavior', () => {
+    it('should render chip correctly in wide container (800px)', () => {
+      createFixture({ containerWidth: 800, chipText: 'Medium length text' });
+
+      const chip = getChipElement();
+      const container = fixture.debugElement.query(By.css('.test-container')).nativeElement;
+
+      expect(chip).toBeTruthy();
+      expect(chip.textContent?.trim()).toBe('Medium length text');
+      expect(container.style.width).toBe('800px');
+    });
+
+    it('should render chip correctly in medium container (400px)', () => {
+      createFixture({ containerWidth: 400, chipText: 'Medium length text' });
+
+      const chip = getChipElement();
+      const container = fixture.debugElement.query(By.css('.test-container')).nativeElement;
+      const style = getChipComputedStyle();
+
+      expect(chip).toBeTruthy();
+      expect(container.style.width).toBe('400px');
+      expect(style.minWidth).toBe('40px');
+      expect(style.maxWidth).toBe('280px');
+    });
+
+    it('should render chip correctly in narrow container (200px)', () => {
+      createFixture({ containerWidth: 200, chipText: 'Some text' });
+
+      const chip = getChipElement();
+      const container = fixture.debugElement.query(By.css('.test-container')).nativeElement;
+      const style = getChipComputedStyle();
+
+      expect(chip).toBeTruthy();
+      expect(container.style.width).toBe('200px');
+      expect(style.minWidth).toBe('40px');
+    });
+
+    it('should maintain min-width even in very narrow container (100px)', () => {
+      createFixture({ containerWidth: 100, chipText: 'X' });
+
+      const container = fixture.debugElement.query(By.css('.test-container')).nativeElement;
+      const style = getChipComputedStyle();
+
+      expect(container.style.width).toBe('100px');
+      expect(style.minWidth).toBe('40px');
+    });
+  });
+});
+
+describe('TopbarComponent with chip in right content', () => {
+  let fixture: ComponentFixture<RightChipTestHostComponent>;
+  let hostComponent: RightChipTestHostComponent;
+
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
+      imports: [RightChipTestHostComponent],
+    }).compileComponents();
+  });
+
+  function createFixture(config: { chipText?: string; containerWidth?: number } = {}): void {
+    fixture = TestBed.createComponent(RightChipTestHostComponent);
+    hostComponent = fixture.componentInstance;
+    if (config.chipText !== undefined) {
+      hostComponent.chipText = config.chipText;
+    }
+    if (config.containerWidth !== undefined) {
+      hostComponent.containerWidth = config.containerWidth;
+    }
+    fixture.detectChanges();
+  }
+
+  function getChipElement(): HTMLElement {
+    return fixture.debugElement.query(By.css('.chip')).nativeElement;
+  }
+
+  function getChipTextElement(): HTMLElement {
+    return fixture.debugElement.query(By.css('.chip__text')).nativeElement;
+  }
+
+  function getChipComputedStyle(): CSSStyleDeclaration {
+    return getComputedStyle(getChipElement());
+  }
+
+  function getChipTextComputedStyle(): CSSStyleDeclaration {
+    return getComputedStyle(getChipTextElement());
+  }
+
+  describe('chip dimension constraints', () => {
+    it('should have min-width of 40px with short text', () => {
+      createFixture({ chipText: 'Hi' });
+
+      const style = getChipComputedStyle();
+
+      expect(style.minWidth).toBe('40px');
+    });
+
+    it('should have max-width of 280px with long text', () => {
+      createFixture({
+        chipText:
+          'This is a very long text that should definitely exceed the maximum width constraint of the chip component',
+      });
+
+      const style = getChipComputedStyle();
+
+      expect(style.maxWidth).toBe('280px');
+    });
+
+    it('should not exceed max-width regardless of text length', () => {
+      createFixture({ chipText: 'A'.repeat(500) });
+
+      const style = getChipComputedStyle();
+
+      expect(style.maxWidth).toBe('280px');
+    });
+  });
+
+  describe('text truncation', () => {
+    it('should show full text when it fits within max-width', () => {
+      createFixture({ chipText: 'Short text' });
+
+      const chipText = getChipTextElement();
+
+      expect(chipText.textContent?.trim()).toBe('Short text');
+    });
+
+    it('should truncate text with ellipsis when exceeding max-width', () => {
+      createFixture({
+        chipText:
+          'This is a very long text that should definitely be truncated with ellipsis because it exceeds max-width',
+      });
+
+      const textStyle = getChipTextComputedStyle();
+      const style = getChipComputedStyle();
+
       expect(textStyle.textOverflow).toBe('ellipsis');
       expect(textStyle.overflow).toBe('hidden');
       expect(textStyle.whiteSpace).toBe('nowrap');

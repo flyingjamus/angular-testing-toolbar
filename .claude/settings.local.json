@@ -3,7 +3,14 @@
     "allow": [
       "Bash(npm install:*)",
       "Bash(npx playwright install:*)",
-      "Bash(npm run test:e2e:*)"
+      "Bash(npm run test:e2e:*)",
+      "Bash(gh auth:*)",
+      "Bash(git -C /home/danny/dev/angular-testing/toolbar status)",
+      "Bash(git -C /home/danny/dev/angular-testing/toolbar diff)",
+      "Bash(git -C /home/danny/dev/angular-testing/toolbar log --oneline -5)",
+      "Bash(git -C /home/danny/dev/angular-testing/toolbar add src/app/app.html)",
+      "Bash(git -C /home/danny/dev/angular-testing/toolbar commit -m \"$\\(cat <<''EOF''\nRefactor topbar content directives to shorthand syntax\n\nReplace verbose ng-template wrapper syntax with * structural directive\nshorthand for cleaner, more idiomatic Angular templates.\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(git -C /home/danny/dev/angular-testing/toolbar diff src/app/topbar/topbar.component.ts src/app/topbar/topbar.component.spec.ts)"
     ]
   }
 }

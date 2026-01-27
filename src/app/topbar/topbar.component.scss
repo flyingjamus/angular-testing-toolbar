@@ -101,6 +101,7 @@
     grid-area: right;
     justify-self: stretch;
     justify-content: flex-end;
+    overflow: hidden;
   }
 
   &.topbar--center-wrapped {
