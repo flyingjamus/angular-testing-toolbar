@@ -1,20 +1,16 @@
 <app-topbar title="Dashboard" [showBackButton]="true" (backClick)="onBackClick()">
-  <ng-template topbarLeftContent>
-    <span class="chip">
-      <span class="chip__text">This is a very long chip label that should truncate with ellipsis</span>
-    </span>
-  </ng-template>
-  <ng-template topbarCenterContent>
-    <nav class="demo-nav">
-      <a href="#">Home</a>
-      <a href="#">Products</a>
-      <a href="#">About</a>
-    </nav>
-  </ng-template>
-  <ng-template topbarRightContent>
+  <span class="chip" *topbarLeftContent>
+    <span class="chip__text">This is a very long chip label that should truncate with ellipsis</span>
+  </span>
+  <nav class="demo-nav" *topbarCenterContent>
+    <a href="#">Home</a>
+    <a href="#">Products</a>
+    <a href="#">About</a>
+  </nav>
+  <ng-container *topbarRightContent>
     <button class="demo-btn">Settings</button>
     <button class="demo-btn demo-btn--primary">Profile</button>
-  </ng-template>
+  </ng-container>
 </app-topbar>
 
 <main class="demo-content">
