@@ -126,11 +126,13 @@ export class TopbarComponent implements AfterViewInit, OnDestroy {
 
     if (!this.centerContent) {
       topbarEl.classList.remove('topbar--center-wrapped');
+      topbarEl.classList.remove('topbar--measuring');
       return;
     }
 
     // Always decide based on the "single row" layout.
     topbarEl.classList.remove('topbar--center-wrapped');
+    topbarEl.classList.add('topbar--measuring');
 
     const leftEl = this.leftSectionRef.nativeElement;
     const rightEl = this.rightSectionRef.nativeElement;
@@ -152,6 +154,7 @@ export class TopbarComponent implements AfterViewInit, OnDestroy {
       gap,
     });
 
+    topbarEl.classList.remove('topbar--measuring');
     topbarEl.classList.toggle('topbar--center-wrapped', shouldWrap);
   }
 }

@@ -17,7 +17,9 @@
     gap: 8px;
     min-width: 0;
     grid-area: left;
-    justify-self: start;
+    justify-self: stretch;
+    justify-content: flex-start;
+    overflow: hidden;
   }
 
   &__back-title {
@@ -94,9 +96,10 @@
     display: flex;
     align-items: center;
     gap: 8px;
-    min-width: max-content;
+    min-width: 0;
     grid-area: right;
-    justify-self: end;
+    justify-self: stretch;
+    justify-content: flex-end;
   }
 
   &.topbar--center-wrapped {
@@ -107,5 +110,16 @@
 
   &.topbar--center-wrapped &__center-section {
     justify-self: stretch;
+  }
+
+  // Used only for width measurement in JS. Keeps left/right at their natural
+  // content widths (within their own max-width constraints) so we can decide
+  // whether the center needs to wrap, without letting left/right squeeze first.
+  &.topbar--measuring &__left-section {
+    justify-self: start;
+  }
+
+  &.topbar--measuring &__right-section {
+    justify-self: end;
   }
 }
