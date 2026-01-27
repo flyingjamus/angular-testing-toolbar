@@ -1,6 +1,6 @@
 .topbar {
   display: grid;
-  grid-template-columns: auto 1fr auto;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
   grid-template-areas: 'left center right';
   align-items: center;
   padding: 8px 16px;
@@ -15,14 +15,16 @@
     display: flex;
     align-items: center;
     gap: 8px;
-    min-width: max-content;
+    min-width: 0;
     grid-area: left;
+    justify-self: start;
   }
 
   &__back-title {
     display: flex;
     align-items: center;
     gap: 8px;
+    min-width: 0;
   }
 
   &__back-button {
@@ -56,11 +58,20 @@
     font-size: 20px;
     font-weight: 500;
     white-space: nowrap;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   &__left-content {
     display: flex;
     align-items: center;
+    min-width: 0;
+
+    // Allow projected "chip" to shrink and ellipsize inside the left area.
+    :where(.chip) {
+      flex: 0 1 auto;
+    }
   }
 
   &__center-section {

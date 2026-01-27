@@ -37,22 +37,6 @@ export function shouldWrapCenter(params: {
   return required > containerWidth;
 }
 
-export function shouldWrapCenterByOverlap(params: {
-  leftRight: number;
-  centerLeft: number;
-  centerRight: number;
-  rightLeft: number;
-  gap: number;
-}): boolean {
-  const leftRight = Number.isFinite(params.leftRight) ? params.leftRight : 0;
-  const centerLeft = Number.isFinite(params.centerLeft) ? params.centerLeft : 0;
-  const centerRight = Number.isFinite(params.centerRight) ? params.centerRight : 0;
-  const rightLeft = Number.isFinite(params.rightLeft) ? params.rightLeft : 0;
-  const gap = Number.isFinite(params.gap) ? params.gap : 0;
-
-  return centerLeft < leftRight + gap || centerRight > rightLeft - gap;
-}
-
 @Component({
   selector: 'app-topbar',
   standalone: true,
@@ -152,18 +136,19 @@ export class TopbarComponent implements AfterViewInit, OnDestroy {
     const rightEl = this.rightSectionRef.nativeElement;
     const centerInnerEl = this.centerInnerRef.nativeElement;
 
+    const containerWidth = topbarEl.getBoundingClientRect().width;
+    const leftWidth = leftEl.getBoundingClientRect().width;
+    const rightWidth = rightEl.getBoundingClientRect().width;
+    const centerContentWidth = centerInnerEl.scrollWidth;
+
     const computed = getComputedStyle(topbarEl);
     const gap = Number.parseFloat(computed.columnGap) || Number.parseFloat(computed.gap) || 8;
 
-    const leftRect = leftEl.getBoundingClientRect();
-    const centerRect = centerInnerEl.getBoundingClientRect();
-    const rightRect = rightEl.getBoundingClientRect();
-
-    const shouldWrap = shouldWrapCenterByOverlap({
-      leftRight: leftRect.right,
-      centerLeft: centerRect.left,
-      centerRight: centerRect.right,
-      rightLeft: rightRect.left,
+    const shouldWrap = shouldWrapCenter({
+      containerWidth,
+      leftWidth,
+      rightWidth,
+      centerContentWidth,
       gap,
     });
 

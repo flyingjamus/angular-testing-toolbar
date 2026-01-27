@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Component } from '@angular/core';
 import { By } from '@angular/platform-browser';
-import { shouldWrapCenterByOverlap, TopbarComponent } from './topbar.component';
+import { shouldWrapCenter, TopbarComponent } from './topbar.component';
 import {
   TopbarLeftContentDirective,
   TopbarCenterContentDirective,
@@ -508,62 +508,75 @@ describe('TopbarComponent center section wrapping', () => {
   }
 
   describe('wrap decision logic (pure)', () => {
-    it('should not wrap when center does not overlap left/right', () => {
+    it('should not wrap when required width fits', () => {
       expect(
-        shouldWrapCenterByOverlap({
-          leftRight: 160,
-          centerLeft: 300,
-          centerRight: 500,
-          rightLeft: 640,
+        shouldWrapCenter({
+          containerWidth: 800,
+          leftWidth: 160,
+          rightWidth: 140,
+          centerContentWidth: 200,
           gap: 8,
         }),
       ).toBe(false);
     });
 
-    it('should wrap when center overlaps left', () => {
+    it('should wrap when required width exceeds container', () => {
       expect(
-        shouldWrapCenterByOverlap({
-          leftRight: 200,
-          centerLeft: 180,
-          centerRight: 380,
-          rightLeft: 640,
+        shouldWrapCenter({
+          containerWidth: 300,
+          leftWidth: 160,
+          rightWidth: 120,
+          centerContentWidth: 200,
           gap: 8,
         }),
       ).toBe(true);
     });
 
-    it('should wrap when center overlaps right', () => {
+    it('should not wrap when center content width is 0', () => {
       expect(
-        shouldWrapCenterByOverlap({
-          leftRight: 160,
-          centerLeft: 300,
-          centerRight: 680,
-          rightLeft: 660,
+        shouldWrapCenter({
+          containerWidth: 300,
+          leftWidth: 160,
+          rightWidth: 120,
+          centerContentWidth: 0,
           gap: 8,
         }),
-      ).toBe(true);
+      ).toBe(false);
     });
   });
 
   function applyMockedMeasurementsAndUpdate(measurements: {
-    leftRight: number;
-    centerLeft: number;
-    centerRight: number;
-    rightLeft: number;
+    containerWidth: number;
+    leftWidth: number;
+    rightWidth: number;
+    centerContentWidth: number;
   }): void {
     const topbarEl = getTopbar();
     const leftEl = getLeftSection();
     const rightEl = getRightSection();
     const centerEl = getCenterInner();
 
-    leftEl.getBoundingClientRect = () =>
+    topbarEl.getBoundingClientRect = () =>
       ({
-        width: 0,
+        width: measurements.containerWidth,
         height: 0,
         top: 0,
         bottom: 0,
         left: 0,
-        right: measurements.leftRight,
+        right: measurements.containerWidth,
+        x: 0,
+        y: 0,
+        toJSON: () => ({}),
+      }) as DOMRect;
+
+    leftEl.getBoundingClientRect = () =>
+      ({
+        width: measurements.leftWidth,
+        height: 0,
+        top: 0,
+        bottom: 0,
+        left: 0,
+        right: measurements.leftWidth,
         x: 0,
         y: 0,
         toJSON: () => ({}),
@@ -571,29 +584,21 @@ describe('TopbarComponent center section wrapping', () => {
 
     rightEl.getBoundingClientRect = () =>
       ({
-        width: 0,
+        width: measurements.rightWidth,
         height: 0,
         top: 0,
         bottom: 0,
-        left: measurements.rightLeft,
-        right: 0,
+        left: 0,
+        right: measurements.rightWidth,
         x: 0,
         y: 0,
         toJSON: () => ({}),
       }) as DOMRect;
 
-    centerEl.getBoundingClientRect = () =>
-      ({
-        width: 0,
-        height: 0,
-        top: 0,
-        bottom: 0,
-        left: measurements.centerLeft,
-        right: measurements.centerRight,
-        x: 0,
-        y: 0,
-        toJSON: () => ({}),
-      }) as DOMRect;
+    Object.defineProperty(centerEl, 'scrollWidth', {
+      configurable: true,
+      value: measurements.centerContentWidth,
+    });
 
     void topbarEl;
 
@@ -625,10 +630,10 @@ describe('TopbarComponent center section wrapping', () => {
       createFixture({ containerWidth: 800 });
 
       applyMockedMeasurementsAndUpdate({
-        leftRight: 200,
-        centerLeft: 300,
-        centerRight: 500,
-        rightLeft: 640,
+        containerWidth: 800,
+        leftWidth: 160,
+        rightWidth: 140,
+        centerContentWidth: 200,
       });
 
       expect(getTopbar().classList.contains('topbar--center-wrapped')).toBe(false);
@@ -640,10 +645,10 @@ describe('TopbarComponent center section wrapping', () => {
       createFixture({ containerWidth: 300 });
 
       applyMockedMeasurementsAndUpdate({
-        leftRight: 200,
-        centerLeft: 190,
-        centerRight: 390,
-        rightLeft: 360,
+        containerWidth: 300,
+        leftWidth: 160,
+        rightWidth: 120,
+        centerContentWidth: 200,
       });
 
       expect(getTopbar().classList.contains('topbar--center-wrapped')).toBe(true);
@@ -653,32 +658,32 @@ describe('TopbarComponent center section wrapping', () => {
       createFixture({ containerWidth: 300 });
 
       applyMockedMeasurementsAndUpdate({
-        leftRight: 200,
-        centerLeft: 190,
-        centerRight: 390,
-        rightLeft: 360,
+        containerWidth: 300,
+        leftWidth: 160,
+        rightWidth: 120,
+        centerContentWidth: 200,
       });
       expect(getTopbar().classList.contains('topbar--center-wrapped')).toBe(true);
 
       applyMockedMeasurementsAndUpdate({
-        leftRight: 200,
-        centerLeft: 300,
-        centerRight: 500,
-        rightLeft: 640,
+        containerWidth: 600,
+        leftWidth: 160,
+        rightWidth: 120,
+        centerContentWidth: 200,
       });
       expect(getTopbar().classList.contains('topbar--center-wrapped')).toBe(false);
     });
   });
 
   describe('measured decision wiring', () => {
-    it('should wrap center when measured rects overlap', () => {
+    it('should wrap center when measured widths exceed container', () => {
       createFixture({ containerWidth: 500 });
 
       applyMockedMeasurementsAndUpdate({
-        leftRight: 240,
-        centerLeft: 260,
-        centerRight: 540,
-        rightLeft: 520,
+        containerWidth: 500,
+        leftWidth: 160,
+        rightWidth: 120,
+        centerContentWidth: 400,
       });
 
       expect(getTopbar().classList.contains('topbar--center-wrapped')).toBe(true);
@@ -693,10 +698,10 @@ describe('TopbarComponent center section wrapping', () => {
       const chipStyle = getComputedStyle(chip);
 
       applyMockedMeasurementsAndUpdate({
-        leftRight: 240,
-        centerLeft: 220,
-        centerRight: 420,
-        rightLeft: 400,
+        containerWidth: 300,
+        leftWidth: 200,
+        rightWidth: 120,
+        centerContentWidth: 180,
       });
 
       // Chip should maintain its min-width
