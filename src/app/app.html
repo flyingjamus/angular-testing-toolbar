@@ -1,28 +1,36 @@
-<app-topbar title="Dashboard" [showBackButton]="true" (backClick)="onBackClick()">
-  <span class="chip" *topbarLeftContent>
+<lds-designer-header
+  titleText="Designer"
+  inputPlaceholder="Search..."
+  [primaryBtnVisible]="true"
+  primaryBtnText="Save"
+  [secondaryBtnVisible]="true"
+  secondaryBtnText="Cancel"
+  (backClicked)="onBackClick()"
+>
+  <span class="chip" lds-designer-header-left-content>
     <span class="chip__text">This is a very long chip label that should truncate with ellipsis</span>
   </span>
-  <nav class="demo-nav" *topbarCenterContent>
+  <nav class="demo-nav" lds-designer-header-center-content>
     <a href="#">Home</a>
     <a href="#">Products</a>
     <a href="#">About</a>
   </nav>
-  <button class="demo-btn" *topbarRightFixedContent>Help</button>
-  <ng-container *topbarRightContent>
+  <ng-container lds-designer-header-right-content>
     <button class="demo-btn">Settings</button>
-    <button class="demo-btn demo-btn--primary">Profile</button>
   </ng-container>
-</app-topbar>
+</lds-designer-header>
 
 <main class="demo-content">
-  <h2>Topbar Component Demo</h2>
-  <p>The topbar above demonstrates:</p>
+  <h2>Designer Header Component Demo</h2>
+  <p>The designer header above demonstrates:</p>
   <ul>
-    <li>Back button (left, before title)</li>
-    <li>Title ("Dashboard")</li>
+    <li>Back button (fixed width sidebar area)</li>
+    <li>Title ("Designer")</li>
+    <li>Expandable input field (Search)</li>
     <li>Left content (Chip with ellipsis - min 40px, max 280px)</li>
     <li>Center content (Navigation - wraps to second line when no room)</li>
-    <li>Right content (Settings and Profile buttons)</li>
+    <li>Right content (Settings button)</li>
+    <li>Action buttons (Cancel, Save)</li>
   </ul>
-  <p><strong>Resize the browser</strong> to see the center nav wrap to a second line when the chip reaches its minimum width.</p>
+  <p><strong>Resize the browser</strong> to see the center nav wrap to a second line when space is limited.</p>
 </main>

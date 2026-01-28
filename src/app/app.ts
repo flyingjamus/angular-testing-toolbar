@@ -1,21 +1,9 @@
 import { Component } from '@angular/core';
-import {
-  TopbarComponent,
-  TopbarLeftContentDirective,
-  TopbarCenterContentDirective,
-  TopbarRightContentDirective,
-  TopbarRightFixedContentDirective,
-} from './topbar';
+import { LdsDesignerHeaderComponent } from './designer-header';
 
 @Component({
   selector: 'app-root',
-  imports: [
-    TopbarComponent,
-    TopbarLeftContentDirective,
-    TopbarCenterContentDirective,
-    TopbarRightContentDirective,
-    TopbarRightFixedContentDirective,
-  ],
+  imports: [LdsDesignerHeaderComponent],
   templateUrl: './app.html',
   styleUrl: './app.scss',
 })

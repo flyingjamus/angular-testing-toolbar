@@ -1,0 +1,101 @@
+<div class="lds-designer-header-container" #headerContainer
+     [class.lds-designer-header-with-center-content]="hasCenterContent">
+  <div class="back-btn-container">
+    <button
+      lds-icon-button
+      aria-hidden="false"
+      aria-label="back to previous page"
+      icon="icon-back"
+      ldsTooltip="Back"
+      (click)="backClick()"
+      [id]="backBtnId()"
+      [attr.testid]="backBtnTestId()"
+      type="button"
+      [miniButton]="mediumScreen()"
+    ></button>
+  </div>
+  <div class="lds-designer-header-left-side" #leftSection ldsOverflowDetector>
+    <div class="title-container">
+      @if(!mediumScreen()) {
+        <h1 class="lds-subheading-2 lds-designer-header-title lds-text-ellipsis" [ldsTooltip]="titleText" [ldsTooltipShowOnOverflow]="true">
+          {{titleText}}
+        </h1>
+        <lds-divider [vertical]="true" class="lds-full-height"></lds-divider>
+      }
+      <lds-expandable-input
+        [(ngModel)]="value"
+        [placeholder]="inputPlaceholder"
+        [disabled]="disabled"
+        [weakStyle]="passiveInputStyle"
+        [inputTestId]="inputTestId()"
+        [ariaLabel]="ariaLabel"
+        (ngModelChange)="inputChange($event)"
+        [ldsForbiddenChars]="'[\\/:*?<>|@#%]'"
+        [noInteraction]="inputInteractionDisable"
+        [small]="mediumScreen()"
+      ></lds-expandable-input>
+    </div>
+    <div class="lds-designer-header-left-content" #leftContent>
+      <ng-content select="[lds-designer-header-left-content]"></ng-content>
+    </div>
+  </div>
+  <div class="lds-designer-header-center-content" #centerSection>
+    <div class="lds-designer-header-center-inner" #centerInner>
+      <ng-content select="[lds-designer-header-center-content]"></ng-content>
+    </div>
+  </div>
+  <div class="lds-designer-header-right-side" #rightSection>
+    <div class="lds-designer-header-right-content" #rightContent>
+      <ng-content select="[lds-designer-header-right-content]"></ng-content>
+    </div>
+    @if(!mediumScreen()) {
+      @if(actionsDividerVisible && (primaryBtnVisible || secondaryBtnVisible || menuBtnVisible)) {
+        <lds-divider [vertical]="true" class="lds-ml-6 lds-mr-6" [style.height]="'32px'"></lds-divider>
+      }
+    }
+    <div class="actions-container">
+      @if(secondaryBtnVisible && secondaryBtnText) {
+        <button
+          lds-button
+          appearance="outline"
+          (click)="secondaryClick()"
+          [disabled]="secondaryBtnDisabled"
+          color="secondary"
+          [attr.testid]="secondaryBtnTestId()"
+          type="button"
+          [miniButton]="mediumScreen()"
+        >
+          {{secondaryBtnText}}
+        </button>
+      } @if(primaryBtnVisible && primaryBtnText) {
+      <button
+        lds-button
+        appearance="filled"
+        (click)="primaryClick()"
+        [disabled]="primaryBtnDisabled"
+        color="secondary"
+        [attr.testid]="primaryBtnTestId()"
+        [attr.id]="primaryBtnId()"
+        type="button"
+        [miniButton]="mediumScreen()"
+      >
+        {{primaryBtnText}}
+      </button>
+    } @if(menuBtnVisible) {
+      <button
+        lds-icon-button
+        appearance="standard"
+        icon="icon-dots-vertical"
+        (click)="menuClick()"
+        [disabled]="menuBtnDisabled"
+        color="secondary"
+        [attr.testid]="menuBtnTestId()"
+        aria-label="Open actions menu"
+        ldsTooltip="Actions"
+        type="button"
+        [miniButton]="mediumScreen()"
+      ></button>
+    }
+    </div>
+  </div>
+</div>

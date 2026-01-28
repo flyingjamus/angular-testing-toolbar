@@ -1,0 +1,194 @@
+:host {
+  display: block;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.12), 0 6px 10px rgba(0, 0, 0, 0.08);
+  z-index: var(--lds-z-index-xxs, 1);
+  position: relative;
+}
+
+.lds-designer-header-container {
+  display: grid;
+  grid-template-columns: min-content auto 0 auto;
+  grid-template-areas: 'back left center right';
+  flex-shrink: 0;
+  padding-right: var(--lds-space-6, 16px);
+  align-items: center;
+  min-height: 56px;
+  border-bottom: 1px solid var(--lds-color-border-light, #e0e0e0);
+  position: relative;
+  cursor: default;
+  column-gap: 8px;
+  row-gap: 8px;
+  box-sizing: border-box;
+
+  .back-btn-container {
+    width: var(--lds-size-width-side-bar, 56px);
+    min-width: var(--lds-size-width-side-bar, 56px);
+    justify-content: center;
+    display: flex;
+    align-items: center;
+    height: 100%;
+    box-shadow: 1px 0 0 0 var(--lds-color-border-light, #e0e0e0);
+    grid-area: back;
+  }
+
+  .lds-designer-header-left-side {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+    grid-area: left;
+    justify-self: stretch;
+    justify-content: flex-start;
+    overflow: hidden;
+    height: 100%;
+  }
+
+  .title-container {
+    display: flex;
+    column-gap: var(--lds-space-6, 16px);
+    align-items: center;
+    padding: var(--lds-space-2, 4px) 0 var(--lds-space-2, 4px) var(--lds-space-8, 24px);
+    height: 36px;
+    min-width: 0;
+    flex: 0 0 auto;
+    overflow: hidden;
+  }
+
+  .lds-designer-header-title {
+    min-width: 1.75rem;
+    flex: 0 0 auto;
+    margin: 0;
+    font-size: 20px;
+    font-weight: 500;
+    white-space: nowrap;
+  }
+
+  .lds-designer-header-left-content {
+    display: flex;
+    align-items: center;
+    min-width: 0;
+    flex: 1 1 0;
+    height: 100%;
+    overflow: hidden;
+
+    // Allow projected "chip" to shrink and ellipsize inside the left area.
+    :where(.chip) {
+      flex: 0 1 auto;
+      max-width: 100%;
+    }
+  }
+
+  .lds-designer-header-center-content {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    grid-area: center;
+    justify-self: center;
+    min-width: 0;
+    height: 100%;
+  }
+
+  .lds-designer-header-center-inner {
+    display: inline-flex;
+    align-items: center;
+    min-width: 0;
+    white-space: nowrap;
+  }
+
+  .lds-designer-header-right-side {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+    grid-area: right;
+    justify-self: stretch;
+    justify-content: flex-end;
+    overflow: hidden;
+    height: 100%;
+  }
+
+  .lds-designer-header-right-content {
+    display: flex;
+    align-items: center;
+    min-width: 0;
+    flex: 1 1 auto;
+    height: 100%;
+
+    :where(.chip) {
+      flex: 0 1 auto;
+    }
+  }
+
+  .actions-container {
+    display: flex;
+    column-gap: 8px;
+    overflow: hidden;
+    height: 100%;
+    align-items: center;
+    flex: 0 0 auto;
+  }
+
+  // With center content - use 1fr for left/right to balance
+  &.lds-designer-header-with-center-content {
+    grid-template-columns: min-content minmax(0, 1fr) auto minmax(0, 1fr);
+  }
+
+  // Wrapped state - center moves to second row
+  &.lds-designer-header-center-wrap {
+    &.lds-designer-header-with-center-content {
+      grid-template-areas:
+        'back left right right'
+        'back center center center';
+      grid-template-columns: min-content minmax(0, 1fr) minmax(0, 1fr) auto;
+      grid-template-rows: auto auto;
+
+      .back-btn-container {
+        grid-area: back;
+        align-self: stretch;
+      }
+
+      .lds-designer-header-left-side {
+        grid-area: left;
+      }
+
+      .lds-designer-header-right-side {
+        grid-area: right;
+      }
+
+      .lds-designer-header-center-content {
+        grid-area: center;
+        justify-self: stretch;
+        min-height: 48px;
+        padding: 0 var(--lds-space-4, 12px) 0 var(--lds-space-5, 16px);
+      }
+    }
+  }
+
+  // Measuring state - allow left/right to reach natural widths for measurement
+  &.lds-designer-header-measuring .lds-designer-header-left-side {
+    justify-self: start;
+  }
+
+  &.lds-designer-header-measuring .lds-designer-header-right-side {
+    justify-self: end;
+  }
+}
+
+// Utility classes (fallbacks if not defined elsewhere)
+.lds-text-ellipsis {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.lds-full-height {
+  height: 100%;
+}
+
+.lds-ml-6 {
+  margin-left: var(--lds-space-6, 16px);
+}
+
+.lds-mr-6 {
+  margin-right: var(--lds-space-6, 16px);
+}

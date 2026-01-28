@@ -15,10 +15,10 @@ describe('App', () => {
     expect(app).toBeTruthy();
   });
 
-  it('should render topbar with title', () => {
+  it('should render designer header title', () => {
     const fixture = TestBed.createComponent(App);
     fixture.detectChanges();
-    const titleElement = fixture.debugElement.query(By.css('.topbar__title'));
-    expect(titleElement.nativeElement.textContent).toBe('Dashboard');
+    const titleElement = fixture.debugElement.query(By.css('.lds-designer-header-title'));
+    expect(titleElement.nativeElement.textContent.trim()).toBe('Designer');
   });
 });
