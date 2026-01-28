@@ -1,21 +1,33 @@
 import {
   AfterViewInit,
+  booleanAttribute,
+  ChangeDetectionStrategy,
   ChangeDetectorRef,
   Component,
   ElementRef,
   EventEmitter,
+  forwardRef,
   HostListener,
+  input,
   Input,
   NgZone,
   OnDestroy,
   Output,
-  signal,
   ViewChild,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
+import { ControlValueAccessor, FormsModule, NG_VALUE_ACCESSOR } from '@angular/forms';
+import { MatMenu } from '@angular/material/menu';
 import { DESIGNER_HEADER_STUBS } from './designer-header.stubs';
 
+/**
+ * Determines whether the center content should wrap to its own row.
+ *
+ * In the single-row grid, the center column is `auto` and left/right are `1fr`.
+ * That means the remaining space (after center + gaps) is split evenly between
+ * left and right, regardless of their intrinsic sizes. So we need to wrap the
+ * center if either side cannot fit within its half.
+ */
 export function shouldWrapCenter(params: {
   containerWidth: number;
   leftWidth: number;
@@ -33,10 +45,6 @@ export function shouldWrapCenter(params: {
 
   if (containerWidth <= 0 || centerContentWidth <= 0) return false;
 
-  // In the single-row grid, the center column is `auto` and left/right are `1fr`.
-  // That means the remaining space (after center + gaps) is split evenly between
-  // left and right, regardless of their intrinsic sizes. So we need to wrap the
-  // center if either side cannot fit within its half.
   const remainingForSides = containerWidth - centerContentWidth - 2 * gap;
   if (remainingForSides <= 0) return true;
 
@@ -96,62 +104,193 @@ function measureFixedPlusFlexibleWidth(params: {
   return fixedWidth + gap + flexibleWidth;
 }
 
+/**
+ * ## lds-designer-header Component
+ *
+ * The top block in all Lightico's designer pages (workflows, forms, html, pdf) providing back button,
+ * title text, editable and expandable input field, primary, secondary and menu buttons as well as
+ * optional injectable content block at the center/left/right.
+ */
 @Component({
   selector: 'lds-designer-header',
   standalone: true,
   imports: [CommonModule, FormsModule, ...DESIGNER_HEADER_STUBS],
+  providers: [
+    {
+      provide: NG_VALUE_ACCESSOR,
+      useExisting: forwardRef(() => LdsDesignerHeader),
+      multi: true,
+    },
+  ],
   templateUrl: './designer-header.component.html',
   styleUrl: './designer-header.component.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class LdsDesignerHeaderComponent implements AfterViewInit, OnDestroy {
-  // Title
-  @Input() titleText = '';
+export class LdsDesignerHeader implements ControlValueAccessor, AfterViewInit, OnDestroy {
+  /**
+   * Header title text that appears to the right of the back arrow.
+   */
+  @Input() titleText!: string;
 
-  // Input
-  @Input() value = '';
-  @Input() inputPlaceholder = '';
-  @Input() disabled = false;
-  @Input() passiveInputStyle = false;
+  /**
+   * Header input text that appears to the right of the inner divider.
+   */
+  @Input()
+  get inputValue(): string {
+    return this.value;
+  }
+  set inputValue(val: string) {
+    if (val !== this.value) {
+      this.value = val ?? '';
+      this.onChange(this.value);
+      this.cdr.markForCheck();
+    }
+  }
+
+  /**
+   * ARIA label for the input.
+   */
   @Input() ariaLabel = '';
-  @Input() inputInteractionDisable = false;
 
-  // Back button
-  @Input() backBtnId = signal('');
-  @Input() backBtnTestId = signal('');
-
-  // Input test ID
-  @Input() inputTestId = signal('');
-
-  // Primary button
-  @Input() primaryBtnVisible = false;
-  @Input() primaryBtnText = '';
-  @Input() primaryBtnDisabled = false;
-  @Input() primaryBtnTestId = signal('');
-  @Input() primaryBtnId = signal('');
-
-  // Secondary button
-  @Input() secondaryBtnVisible = false;
-  @Input() secondaryBtnText = '';
+  /**
+   * Whether secondary button is disabled.
+   */
   @Input() secondaryBtnDisabled = false;
-  @Input() secondaryBtnTestId = signal('');
 
-  // Menu button
-  @Input() menuBtnVisible = false;
+  /**
+   * Whether primary button is disabled.
+   */
+  @Input() primaryBtnDisabled = false;
+
+  /**
+   * Whether menu button is disabled.
+   */
   @Input() menuBtnDisabled = false;
-  @Input() menuBtnTestId = signal('');
 
-  // Divider
-  @Input() actionsDividerVisible = true;
+  /**
+   * Whether menu button is visible.
+   */
+  @Input({ transform: booleanAttribute }) menuBtnVisible = false;
 
-  // Screen size
-  @Input() mediumScreen = signal(false);
+  /**
+   * Whether primary button is visible.
+   */
+  @Input({ transform: booleanAttribute }) primaryBtnVisible = true;
 
-  // Outputs
-  @Output() backClicked = new EventEmitter<void>();
+  /**
+   * Whether secondary button is visible.
+   */
+  @Input({ transform: booleanAttribute }) secondaryBtnVisible = true;
+
+  /**
+   * Whether the divider between right actions and right extra content is visible.
+   */
+  @Input({ transform: booleanAttribute }) actionsDividerVisible = false;
+
+  /**
+   * Whether the input interactions are disabled.
+   */
+  @Input({ transform: booleanAttribute }) inputInteractionDisable = false;
+
+  /**
+   * Secondary button text.
+   */
+  @Input() secondaryBtnText?: string;
+
+  /**
+   * Primary button text.
+   */
+  @Input() primaryBtnText?: string;
+
+  /**
+   * Secondary button test id.
+   */
+  secondaryBtnTestId = input<string | undefined>(undefined);
+
+  /**
+   * Primary button test id.
+   */
+  primaryBtnTestId = input<string | undefined>(undefined);
+
+  /**
+   * Menu button test id.
+   */
+  menuBtnTestId = input<string | undefined>(undefined);
+
+  /**
+   * Back button test id.
+   */
+  backBtnTestId = input<string | undefined>(undefined);
+
+  /**
+   * Back button id.
+   */
+  backBtnId = input<string | null>(null);
+
+  /**
+   * Primary button id.
+   */
+  primaryBtnId = input<string | undefined>(undefined);
+
+  /**
+   * Input test id.
+   */
+  inputTestId = input<string>('');
+
+  /**
+   * Whether the passive input style should be applied.
+   */
+  @Input() passiveInputStyle = false;
+
+  /**
+   * Headers input placeholder text.
+   */
+  @Input() inputPlaceholder = 'Type...';
+
+  /**
+   * Menu reference for the menu button.
+   */
+  @Input() menu!: MatMenu;
+
+  /**
+   * Whether the input field is disabled.
+   */
+  @Input({ transform: booleanAttribute }) disabled = false;
+
+  /**
+   * Whether the screen is medium-sized (affects layout/button sizes).
+   */
+  mediumScreen = input<boolean>(false);
+
+  /**
+   * Emits when the primary button is clicked.
+   */
   @Output() primaryClicked = new EventEmitter<void>();
-  @Output() secondaryClicked = new EventEmitter<void>();
+
+  /**
+   * Emits when the menu button is clicked.
+   */
   @Output() menuClicked = new EventEmitter<void>();
-  @Output() inputChanged = new EventEmitter<string>();
+
+  /**
+   * Emits when the secondary button is clicked.
+   */
+  @Output() secondaryClicked = new EventEmitter<void>();
+
+  /**
+   * Emits when the back button is clicked.
+   */
+  @Output() backClicked = new EventEmitter<void>();
+
+  /**
+   * Emits when the input value changes.
+   */
+  @Output() inputValueChange = new EventEmitter<string>();
+
+  /**
+   * @ignore
+   */
+  @ViewChild('hiddenText') textEl!: ElementRef;
 
   // ViewChild refs for layout measurement
   @ViewChild('headerContainer', { static: true })
@@ -171,32 +310,83 @@ export class LdsDesignerHeaderComponent implements AfterViewInit, OnDestroy {
 
   private resizeObserver?: ResizeObserver;
   private layoutUpdateScheduled = false;
+  private onChange: (v: string) => void = () => {};
+  private onTouched: () => void = () => {};
 
   hasCenterContent = false;
+  public value = '';
 
   constructor(
     private ngZone: NgZone,
     private cdr: ChangeDetectorRef,
   ) {}
 
-  backClick(): void {
-    this.backClicked.emit();
-  }
-
+  /**
+   * @ignore
+   */
   primaryClick(): void {
     this.primaryClicked.emit();
   }
 
-  secondaryClick(): void {
-    this.secondaryClicked.emit();
-  }
-
+  /**
+   * @ignore
+   */
   menuClick(): void {
     this.menuClicked.emit();
   }
 
-  inputChange(value: string): void {
-    this.inputChanged.emit(value);
+  /**
+   * @ignore
+   */
+  secondaryClick(): void {
+    this.secondaryClicked.emit();
+  }
+
+  /**
+   * @ignore
+   */
+  backClick(): void {
+    this.backClicked.emit();
+  }
+
+  /**
+   * @ignore
+   */
+  inputChange(newValue: string): void {
+    this.value = newValue;
+    this.onChange(newValue);
+    this.inputValueChange.emit(newValue);
+    this.cdr.markForCheck();
+  }
+
+  /**
+   * @ignore
+   */
+  writeValue(v: string): void {
+    this.value = v ?? '';
+    this.cdr.markForCheck();
+  }
+
+  /**
+   * @ignore
+   */
+  registerOnChange(fn: (v: string) => void): void {
+    this.onChange = fn;
+  }
+
+  /**
+   * @ignore
+   */
+  registerOnTouched(fn: () => void): void {
+    this.onTouched = fn;
+  }
+
+  /**
+   * @ignore
+   */
+  setDisabledState(isDisabled: boolean): void {
+    this.disabled = isDisabled;
+    this.cdr.markForCheck();
   }
 
   ngAfterViewInit(): void {
@@ -310,3 +500,6 @@ export class LdsDesignerHeaderComponent implements AfterViewInit, OnDestroy {
     containerEl.classList.toggle('lds-designer-header-center-wrap', shouldWrap);
   }
 }
+
+// Backwards-compatible alias for the renamed class
+export { LdsDesignerHeader as LdsDesignerHeaderComponent };

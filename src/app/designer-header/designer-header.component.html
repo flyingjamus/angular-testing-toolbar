@@ -16,9 +16,9 @@
   </div>
   <div class="lds-designer-header-left-side" #leftSection ldsOverflowDetector>
     <div class="title-container">
-      @if(!mediumScreen()) {
+      @if (!mediumScreen()) {
         <h1 class="lds-subheading-2 lds-designer-header-title lds-text-ellipsis" [ldsTooltip]="titleText" [ldsTooltipShowOnOverflow]="true">
-          {{titleText}}
+          {{ titleText }}
         </h1>
         <lds-divider [vertical]="true" class="lds-full-height"></lds-divider>
       }
@@ -48,13 +48,13 @@
     <div class="lds-designer-header-right-content" #rightContent>
       <ng-content select="[lds-designer-header-right-content]"></ng-content>
     </div>
-    @if(!mediumScreen()) {
-      @if(actionsDividerVisible && (primaryBtnVisible || secondaryBtnVisible || menuBtnVisible)) {
+    @if (!mediumScreen()) {
+      @if (actionsDividerVisible && (primaryBtnVisible || secondaryBtnVisible || menuBtnVisible)) {
         <lds-divider [vertical]="true" class="lds-ml-6 lds-mr-6" [style.height]="'32px'"></lds-divider>
       }
     }
     <div class="actions-container">
-      @if(secondaryBtnVisible && secondaryBtnText) {
+      @if (secondaryBtnVisible && secondaryBtnText) {
         <button
           lds-button
           appearance="outline"
@@ -65,37 +65,39 @@
           type="button"
           [miniButton]="mediumScreen()"
         >
-          {{secondaryBtnText}}
+          {{ secondaryBtnText }}
         </button>
-      } @if(primaryBtnVisible && primaryBtnText) {
-      <button
-        lds-button
-        appearance="filled"
-        (click)="primaryClick()"
-        [disabled]="primaryBtnDisabled"
-        color="secondary"
-        [attr.testid]="primaryBtnTestId()"
-        [attr.id]="primaryBtnId()"
-        type="button"
-        [miniButton]="mediumScreen()"
-      >
-        {{primaryBtnText}}
-      </button>
-    } @if(menuBtnVisible) {
-      <button
-        lds-icon-button
-        appearance="standard"
-        icon="icon-dots-vertical"
-        (click)="menuClick()"
-        [disabled]="menuBtnDisabled"
-        color="secondary"
-        [attr.testid]="menuBtnTestId()"
-        aria-label="Open actions menu"
-        ldsTooltip="Actions"
-        type="button"
-        [miniButton]="mediumScreen()"
-      ></button>
-    }
+      }
+      @if (primaryBtnVisible && primaryBtnText) {
+        <button
+          lds-button
+          appearance="filled"
+          (click)="primaryClick()"
+          [disabled]="primaryBtnDisabled"
+          color="secondary"
+          [attr.testid]="primaryBtnTestId()"
+          [attr.id]="primaryBtnId()"
+          type="button"
+          [miniButton]="mediumScreen()"
+        >
+          {{ primaryBtnText }}
+        </button>
+      }
+      @if (menuBtnVisible) {
+        <button
+          lds-icon-button
+          appearance="standard"
+          icon="icon-dots-vertical"
+          (click)="menuClick()"
+          [disabled]="menuBtnDisabled"
+          color="secondary"
+          [attr.testid]="menuBtnTestId()"
+          aria-label="Open actions menu"
+          ldsTooltip="Actions"
+          type="button"
+          [miniButton]="mediumScreen()"
+        ></button>
+      }
     </div>
   </div>
 </div>
